@@ -21,6 +21,16 @@ VMware Cloud Foundation 相關 **Claude Code Skills** 與技術文件集合。
 ```
 vcf-skills/
 ├── README.md
+├── MAINTENANCE.md            # 維護指南：怎麼長期更新這些 skill
+├── CHANGELOG.md              # 變動紀錄
+├── scripts/
+│   └── vcf-docs-generate.js  # 文件半自動重生 workflow (Claude Code)
+├── docs/                     # 可獨立閱讀的完整技術文件 (一般 md)
+│   ├── VCF9-完整指南.md
+│   ├── VCD-完整指南.md
+│   ├── HCX-完整指南.md
+│   ├── VCF-5.2.1-完整指南.md
+│   └── VCF-升級指南.md
 ├── vcf-9/
 │   ├── SKILL.md
 │   └── references/{vcf-9.0.md, vcf-9.1.md}
@@ -37,6 +47,22 @@ vcf-skills/
     ├── SKILL.md
     └── references/upgrade-5.2-to-9.0.md
 ```
+
+## 兩種用途：Skill vs 完整技術文件
+
+| 用途 | 看哪裡 | 說明 |
+|------|--------|------|
+| 給 Claude 觸發、快速查閱 | `*/SKILL.md` + `*/references/` | Claude Code skill 格式 |
+| 給人從頭讀的完整技術文件 | `docs/*.md` | 含目錄、章節、表格、FAQ、checklist |
+
+## 維護
+
+這些 skill 會隨 VCF / VCD / HCX 版本不斷更新。維護策略與更新流程見
+[`MAINTENANCE.md`](MAINTENANCE.md)，重點：
+
+- 會過期的內容（版本號、規模數字）集中在 `references/` 與 `docs/`，`SKILL.md` 觸發描述保持穩定。
+- `docs/` 可用 `scripts/vcf-docs-generate.js`（workflow）半自動重生。
+- 加版號、不刪舊檔；每次更新記 [`CHANGELOG.md`](CHANGELOG.md)。
 
 ## 如何安裝為 Claude Code Skills
 
