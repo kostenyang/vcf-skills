@@ -1,393 +1,235 @@
-# VMware Cloud Foundation 9 (9.0 / 9.1) 完整技術指南
+# VMware Cloud Foundation 9 完整指南（VCF 9.0 / 9.1）
 
-> 本文件為可獨立閱讀的技術參考文件，內容基於 Broadcom 官方已公開之查證事實撰寫。凡未明確查證之版本號、日期、數字或行為，一律標註「以官方文件為準」。
+> 本文件可獨立閱讀，整理 VMware Cloud Foundation 9（VCF 9.0、9.0.1、9.0.2 與 9.1）的架構、版本、元件 BOM、新功能、規劃 checklist 與 FAQ。資料截至 **2026-05-31**。技術名詞保留英文。
 
 ---
 
 ## 目錄
 
-1. [文件總覽與適用對象](#1-文件總覽與適用對象)
-2. [VCF 9 的定位：Broadcom 時代的架構統一](#2-vcf-9-的定位broadcom-時代的架構統一)
-3. [版本與發布資訊（9.0 / 9.1）](#3-版本與發布資訊90--91)
-4. [統一平台架構（Single Platform）](#4-統一平台架構single-platform)
-5. [核心元件與版本基準](#5-核心元件與版本基準)
-6. [部署與安裝：VCF Installer / SDDC Manager Appliance](#6-部署與安裝vcf-installer--sddc-manager-appliance)
-7. [VCF Operations：統一營運層](#7-vcf-operations統一營運層)
-8. [VCF Automation：自動化與自助服務](#8-vcf-automation自動化與自助服務)
-9. [Unified SDK 與 API 一致性](#9-unified-sdk-與-api-一致性)
-10. [生命週期管理：vLCM Image 模式](#10-生命週期管理vlcm-image-模式)
-11. [VCF 9.1 重點新功能](#11-vcf-91-重點新功能)
-12. [落地三方式：Deploy / Converge / Import](#12-落地三方式deploy--converge--import)
-13. [成本與 TCO 效益](#13-成本與-tco-效益)
-14. [規模與上限參考表](#14-規模與上限參考表)
-15. [導入規劃 Checklist](#15-導入規劃-checklist)
-16. [升級與遷移 Checklist](#16-升級與遷移-checklist)
-17. [常見問題（FAQ）](#17-常見問題faq)
-18. [名詞對照表（Aria → VCF）](#18-名詞對照表aria--vcf)
-19. [參考來源](#19-參考來源)
+1. [概觀與版本時間線](#1-概觀與版本時間線)
+2. [VCF 9 統一架構](#2-vcf-9-統一架構)
+3. [VCF 9.0 架構基礎](#3-vcf-90-架構基礎)
+4. [VCF 9.0.1 / 9.0.2 維護版](#4-vcf-901--902-維護版)
+5. [VCF 9.1 新功能](#5-vcf-91-新功能)
+6. [VCF 9.1 Bill of Materials](#6-vcf-91-bill-of-materials)
+7. [官方宣稱數字（核對表）](#7-官方宣稱數字核對表)
+8. [規劃與導入 Checklist](#8-規劃與導入-checklist)
+9. [常見問答 FAQ](#9-常見問答-faq)
+10. [參考來源](#10-參考來源)
 
 ---
 
-## 1. 文件總覽與適用對象
+## 1. 概觀與版本時間線
 
-VMware Cloud Foundation 9（以下簡稱 VCF 9）是 Broadcom 收購 VMware 後，第一個進行重大架構統一的主要版本。本文件涵蓋 VCF 9.0 與 9.1 兩個版本的核心架構、元件、部署模式、生命週期管理、新功能與規劃導入要點。
+VCF 9 是 Broadcom 收購 VMware 後第一個「重大架構統一」版本，將過去鬆散的 SDDC + vRealize/Aria 套件整併為單一私有雲平台、單一安裝程式、單一 OpenAPI。
 
-適用對象：
-
-| 角色 | 關注重點 |
-|------|----------|
-| 雲端 / 虛擬化架構師 | 統一平台架構、元件版本基準、落地方式 |
-| 平台 / 基礎架構維運團隊 | VCF Operations、vLCM、生命週期、升級 |
-| 自動化 / 平台工程團隊 | VCF Automation、Unified SDK、CaaS 自助服務 |
-| AI / 高效能運算團隊 | Private AI、GPU Metrics、VKS |
-| IT 決策者 / 財務 | TCO、成本效益、規模上限 |
+| 版本 | GA 日期 | Build / 性質 |
+|------|---------|--------------|
+| VCF 9.0（首發 / GA） | 2025-06-17 | Build 24755599，建立統一架構基礎 |
+| VCF 9.0.1.0 | 2025-09-29 | 維護版，更新 BOM、聚焦可支援性 |
+| VCF 9.0.2.0 | 2026-01-20 | 維護版（9.0 線最新），bug/安全修補、硬體啟用 |
+| **VCF 9.1.0.0** | **2026-05-12** | **Build 25377994，目前最新主要版本**（官方部落格首次公告 2026-05-05） |
 
 ---
 
-## 2. VCF 9 的定位：Broadcom 時代的架構統一
+## 2. VCF 9 統一架構
 
-VCF 9 是 Broadcom 時代第一個重大架構統一版本。其核心理念是把過去分散的多個產品（vSphere、vSAN、NSX、Aria 系列）整合為**單一平台**，由統一的生命週期（lifecycle）與營運層提供一致體驗，背後由 **VCF management services** 提供共用 runtime。
-
-此版本同時調整了支援模式與發布節奏（release cadence），詳見官方部落格說明（見 [參考來源](#19-參考來源)）。具體的支援週期與發布時程細節以官方文件為準。
-
-關鍵轉變：
-
-- 由「多產品集合」走向「單一平台」。
-- 統一 lifecycle 與營運層，共用 runtime。
-- Aria 系列產品被整併、改名並收斂至 VCF 平台之下（VCF Operations、VCF Automation）。
-- 生命週期管理全面轉向 **vLCM image**，baseline 模式不再支援。
-
----
-
-## 3. 版本與發布資訊（9.0 / 9.1）
-
-| 項目 | 內容 |
-|------|------|
-| VCF 9.0 GA 日期 | **2025-06-17** |
-| 架構定位 | Broadcom 時代第一個重大架構統一版本 |
-| 支援模式 / 發布節奏 | 已於 9 世代調整（細節以官方公告為準） |
-| 9.1 發布時程 | 以官方 Release Notes 為準 |
-
-> 注意：本文件僅明確記載已查證之 9.0 GA 日期（2025-06-17）。其他版本之確切 GA / 釋出日期，請以官方 Release Notes 為準。
-
----
-
-## 4. 統一平台架構（Single Platform）
-
-VCF 9 的核心是「單一平台」概念：
-
-- **統一 lifecycle 與營運層**：所有核心元件的生命週期與營運由平台層統一管理，而非各產品各自為政。
-- **VCF management services 提供共用 runtime**：作為平台共用的執行基礎，承載管理服務。
-- **共用安裝程式**：VCF 與 VVF（vSphere Foundation）共用同一套安裝程式（VCF Installer）。
-
-架構分層（概念示意）：
+### 2.1 組織階層
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  營運與自動化層                                            │
-│  VCF Operations  │  VCF Automation                        │
-├─────────────────────────────────────────────────────────┤
-│  VCF management services（共用 runtime）                  │
-│  統一 lifecycle / 統一營運                                 │
-├─────────────────────────────────────────────────────────┤
-│  核心元件                                                  │
-│  vSphere 9 / ESX 9 / vSAN 9 / NSX 9                       │
-└─────────────────────────────────────────────────────────┘
+Organizational Private Cloud
+  └─ VCF Fleet            （艦隊：生命週期與營運的最大邊界）
+       └─ VCF Instance    （實例）
+            └─ VCF Domains （管理域 / 工作負載域）
+                 └─ vSphere Clusters
 ```
 
----
+### 2.2 核心平面
 
-## 5. 核心元件與版本基準
+| 平面 | 角色 | 取代的舊產品 |
+|------|------|--------------|
+| **VCF Operations** | 單一統一管理介面：效能監控、集中授權、Fleet 管理、整體營運 | vROps / Aria Operations 等分散工具孤島 |
+| **VCF Automation** | 自助服務平面：服務佈建、部署、生命週期（VCF Automation Console） | Aria Automation |
+| **Fleet Management** | 自動化生命週期：修補、升級、break-glass 密碼、憑證輪替 | 分散的 LCM 流程 |
+| **VCF Installer / SDDC Manager** | 單一安裝程式部署元件；SDDC Manager 角色轉變 | 傳統 SDDC Manager 核心 |
+| **VCF Identity Broker** | IdP 與 VCF 元件間中央身分中介（SAML / OIDC） | 各元件分散身分整合 |
 
-VCF 9 的元件版本基準如下：
+> 每個 Fleet **僅有一個** VCF Operations 實例與**一個** VCF Automation 實例。
 
-| 元件 | 版本基準 | 說明 |
-|------|----------|------|
-| vSphere | vSphere 9 | 計算與管理核心 |
-| ESX | ESX 9 | Hypervisor（注意命名為 ESX） |
-| vSAN | vSAN 9 | 軟體定義儲存 |
-| NSX | NSX 9 | 軟體定義網路與安全 |
+### 2.3 重要架構認知校正
 
-生命週期相關：
-
-- 全面採用 **vLCM image** 模式。
-- **baseline 模式不再支援**（詳見 [第 10 章](#10-生命週期管理vlcm-image-模式)）。
-
----
-
-## 6. 部署與安裝：VCF Installer / SDDC Manager Appliance
-
-### 6.1 單一 Appliance 部署
-
-VCF 9 透過 **VCF Installer / SDDC Manager Appliance**，以單一 appliance 完成 ESX / vCenter / NSX 的部署：
-
-- 由單一 appliance 驅動整套核心元件的部署。
-- **VCF 與 VVF（vSphere Foundation）共用同一安裝程式**。
-- 內建 **Quick Start App**，協助快速啟動部署流程。
-
-### 6.2 部署特性摘要
-
-| 特性 | 說明 |
-|------|------|
-| 單一 appliance | 部署 ESX / vCenter / NSX |
-| 共用安裝程式 | VCF 與 VVF 共用 |
-| Quick Start App | 內建，加速初始部署 |
+- VCF 9 已**非**傳統「SDDC Manager 為核心 + vRealize Suite」架構。
+- 自 9.0 起改以 VCF Operations 為統一營運平面、VCF Automation 為自助服務平面。
+- vRealize 已更名整併為 VCF Operations / VCF Automation，舊認知已過時。
+- VCF Identity Broker 於 **Fleet 層級**套用全域身分設定；**ESXi 與 SDDC Manager 仍需個別設定**。
 
 ---
 
-## 7. VCF Operations：統一營運層
+## 3. VCF 9.0 架構基礎
 
-**VCF Operations 取代 Aria Operations / vROps**，作為平台的統一營運層。
+VCF 9.0（2025-06-17 GA）改為統一、模組化的私有雲平台，相對 VCF 5.x 是根本性轉變。
 
-重點能力：
+引入能力：
 
-- 接手原 Aria Operations（vRealize Operations / vROps）的營運監控職責。
-- 內建**統一 storage dashboard**，可同時涵蓋 **vSAN / SAN / NAS** 多種儲存類型的可視性。
-
-| 取代對象 | 新名稱 | 重點 |
-|----------|--------|------|
-| Aria Operations / vROps | VCF Operations | 統一營運；統一 storage dashboard（vSAN / SAN / NAS） |
-
-> 在 9.1 中，VCF Operations 進一步擴充了 Private AI 相關的 GPU Metrics 可視性，詳見 [第 11 章](#11-vcf-91-重點新功能)。
-
----
-
-## 8. VCF Automation：自動化與自助服務
-
-**VCF Automation 取代 Aria Automation**，作為平台的自動化與自助服務層。
-
-| 取代對象 | 新名稱 |
-|----------|--------|
-| Aria Automation | VCF Automation |
-
-在 9.1 中，VCF Automation 與 CaaS（Container as a Service）自助服務能力進一步簡化，支援自助式 namespace（含 registry / ingress / quota / identity），詳見 [第 11 章](#11-vcf-91-重點新功能)。
+- **Fleet → Instance → Domain → Cluster** 組織階層。
+- **VCF Operations** 單一統一管理介面。
+- **VCF Automation** 自助服務佈建。
+- **Fleet Management** 自動化關鍵生命週期作業。
+- **VCF Identity Broker**：SAML / OIDC，Fleet 層級全域設定。
+- **VPC networking**、自動化憑證處理。
+- **converge / import 工作流程**：將既有 vSphere 環境轉換或匯入 VCF。
+- 全面採 **vLCM image-based** 管理（baseline 管理不再使用）。
 
 ---
 
-## 9. Unified SDK 與 API 一致性
+## 4. VCF 9.0.1 / 9.0.2 維護版
 
-VCF 9 推出 **Unified SDK**，將原本分散的 API binding 整併：
+### 4.1 VCF 9.0.1.0（2025-09-29 GA）
+- 維護版，更新 BOM，聚焦可支援性（bug / 安全修補、硬體啟用）。
 
-- 整併範圍涵蓋 **vSphere / vSAN / VCF Installer / SDDC Manager** 的 API binding。
-- 在 **9.1**，Unified SDK 達成跨語言一致性，支援 **Python / Java / PowerCLI / Terraform**，並以 **OpenAPI** 為基礎，確保各語言 binding 行為一致。
+### 4.2 VCF 9.0.2.0（2026-01-20 GA）
+維護版定位：更新 BOM，聚焦可支援性（bug/安全修補、硬體啟用、向後相容新功能）。
 
-| 項目 | 9.0 | 9.1 |
-|------|-----|-----|
-| API binding 整併 | vSphere / vSAN / VCF Installer / SDDC Manager | 延續 |
-| 跨語言一致性 | — | Python / Java / PowerCLI / Terraform（OpenAPI 基礎） |
-
----
-
-## 10. 生命週期管理：vLCM Image 模式
-
-VCF 9 在生命週期管理上有明確的方向轉變：
-
-- **全面採用 vLCM image**：以 image 模式管理叢集（cluster）的元件版本與韌體。
-- **baseline 不再支援**：傳統的 baseline 模式在 VCF 9 中已停止支援，現有環境若仍使用 baseline，需在規劃導入 / 升級時納入轉換考量。
-
-實務影響：
-
-| 面向 | 影響 |
-|------|------|
-| 叢集管理 | 一律以 vLCM image 定義期望狀態 |
-| 既有 baseline 環境 | 需評估轉換路徑（細節以官方文件為準） |
-| 升級流程 | 以 image 為基準進行並行升級（見規模上限） |
+- **vCenter 9.0.2.0**
+  - VMCA 簽發的 vCenter / ESX SSL 憑證接近到期時**自動更新**（machine SSL 在到期少於 5 天時自動延長 2 年）。
+  - Supervisor 控制平面備份於 VAMI **預設啟用**。
+- **VCF Operations 9.0.2.0**
+  - Diagnostics 框架新增 **154 個 signature**（對應 148 個已知問題、4 個最佳實務、2 個基於 VMware Security Advisory）。
+  - SMTP 通知外掛支援 **Microsoft 365 OAuth 2.0** 驗證。
 
 ---
 
-## 11. VCF 9.1 重點新功能
+## 5. VCF 9.1 新功能
 
-以下為 VCF 9.1 的重點新功能，數字皆來自官方查證事實。
+### 5.1 架構
+- **VCF Management Services**：新增共用 runtime 與一組元件，統一生命週期與營運能力的架構。
 
-### 11.1 規模與效能
+### 5.2 基礎架構效率
+- **Enhanced NVMe Memory Tiering**：熱頁留 DRAM、冷頁卸載本地 NVMe，擴大有效記憶體不需額外 DRAM；含軟體鏡像與成本分析（官方稱約 40% TCO 降低）。
+- **vSAN 全域 / 擴展 Deduplication & Compression**：跨叢集類型與工作負載擴大內嵌資料縮減，支援加密資料 (at rest) 去重。
+- **vSphere Elastic Provisioning（Zero Touch）**：以網路影像（UEFI、HTTP/S）裸機自動 bootstrap 與設定 ESX，支援平行影像與自動發現。
+- **規模**：支援多達 5,000 台 ESX 主機，平行生命週期作業。
 
-| 項目 | 9.1 變化 |
-|------|----------|
-| Host 上限 | **翻倍至 5000** |
-| 並行升級叢集數 | 由 **64 → 256 clusters** |
-| VKS 控制平面支援 | 至 **500 clusters** |
-| VKS provisioning 速度 | 約**快 70%** |
+### 5.3 應用交付 / 開發者體驗
+- **API-first**：OpenAPI 為單一事實來源，自動產生各語言 SDK，達成 Python / Java / PowerCLI / Terraform 功能對等。SDK 經 Broadcom Developer Portal、PyPI、Maven Central 發布。
+- 新 API：**Real-Time Metrics API**（Prometheus 相容、2 秒粒度、PromQL、Grafana，涵蓋 ESX/vCenter/vSAN/NSX）、**vCenter Utilization API**、**vCenter Group Federated API (VGFA)**、**vCenter Server Query API**（類 SQL、伺服器端篩選分頁）。
+- **PowerCLI 9.1**：CPU topology (Assigned at PowerOn)、NVMe over TCP VMkernel、vSAN remote datastore 指令、VPC 網路指令、OAuth SSO、ESXi proxy-backed AD 身分。
+- **vSphere Terraform Provider v2.16.0**：Project VPC、vSphere Zones、CPU topology、EVC、Supervisor 等。
+- **vMotion Encryption Offload**：硬體加速，約節省 70% CPU。
+- **VKS**：每 Supervisor 至 500 叢集。
+- **VKS 與 VM Fast-Deploy**：linked clone 加速部署 / 升級。
+- **簡化 CaaS**：自助 namespace 佈建，繼承 registry / ingress / quota / identity。
+- **Native Object Storage（Tech Preview）**：S3 相容、開發者導向、具 IT 治理。
+- **Live Application Stack Blueprints**：擷取執行中應用轉為可重複範本。
 
-### 11.2 快速部署（Fast-Deploy）
+### 5.4 資安韌性 / 合規
+- **ESX Live Patching（限 TPM 主機）**：修補套用於執行中 kernel memory，VM 持續運作、無維護視窗，涵蓋約 80% 修補。
+- **Advanced Cyber Compliance (ACC)**：持續性修復、統一安全態勢、對 VCF 指引與 PCI DSS 自動評估。
+- **地端勒索軟體復原**：cyber recovery clean room、vSAN for Recovery 原生快照式複製、CrowdStrike EDR 整合（隔離環境掃描）。
 
-- **VM / VKS Fast-Deploy**：採用 **linked clone** 技術，加速 VM 與 VKS 的佈建。
-
-### 11.3 容器即服務（CaaS）自助服務
-
-- 簡化 **CaaS 自助 namespace**，自助範圍涵蓋：
-  - **registry**（映像登錄）
-  - **ingress**（入口流量）
-  - **quota**（資源配額）
-  - **identity**（身分）
-
-### 11.4 原生物件儲存
-
-- **Native Object Storage（S3）**：提供原生 S3 物件儲存能力。
-- 狀態：**Tech Preview**（技術預覽，正式支援程度以官方文件為準）。
-
-### 11.5 Private AI 與 GPU 可視性
-
-- **Private AI Model & GPU Metrics**，提供：
-  - **GPU 利用率**
-  - **記憶體壓力（memory pressure）**
-  - **模型層級可視性（model-level visibility）**
-
-### 11.6 記憶體與儲存效率
-
-| 項目 | 效益 |
-|------|------|
-| Memory tiering | 約省 **40%** server 成本 |
-| 壓縮去重（compression / dedup）儲存 | TCO 約降 **39%** |
-| Kubernetes 營運成本 | 約降 **46%** |
-
-### 11.7 網路
-
-- **Unified EVPN**：支援 **Arista / Cisco / SONiC**。
-
-### 11.8 9.1 新功能總表
-
-| 分類 | 功能 | 重點數字 / 狀態 |
-|------|------|-----------------|
-| 規模 | Host 上限 | 5000 |
-| 規模 | 並行升級叢集 | 64 → 256 |
-| 規模 | VKS 控制平面 | 至 500 clusters |
-| 效能 | VKS provisioning | 約快 70% |
-| 效能 | VM / VKS Fast-Deploy | linked clone |
-| CaaS | 自助 namespace | registry / ingress / quota / identity |
-| 儲存 | Native Object Storage（S3） | Tech Preview |
-| AI | Private AI Model & GPU Metrics | GPU 利用率 / 記憶體壓力 / 模型層級可視性 |
-| 成本 | Memory tiering | 約省 40% server 成本 |
-| 成本 | 壓縮去重儲存 | TCO 約降 39% |
-| 成本 | K8s 營運成本 | 約降 46% |
-| 網路 | Unified EVPN | Arista / Cisco / SONiC |
+### 5.5 生態系
+- 網路夥伴：Arista、Cisco、SONiC。
+- AMD Instinct MI350 系列 GPU 支援 DirectPath I/O。
 
 ---
 
-## 12. 落地三方式：Deploy / Converge / Import
+## 6. VCF 9.1 Bill of Materials
 
-VCF 9 提供三種落地（導入）方式：
+主要元件皆為 9.1.0.0：
 
-| 方式 | 說明 | 適用情境 |
+| 元件 | 版本 | Build |
+|------|------|-------|
+| ESX | 9.1.0.0 | 25370933 |
+| vCenter | 9.1.0.0 | 25370922 |
+| NSX | 9.1.0.0 | 25318225 |
+| vSAN ESA Witness | 9.1.0.0 | 25370927 |
+| vSAN OSA Witness | 9.1.0.0 | 25370925 |
+| vSAN File Services | 9.1.0.0 | 25370922 |
+| VCF Operations | 9.1.0.0 | 25346025 |
+| VCF Operations for Networks | 9.1.0.0 | 25318550 |
+| VCF Automation | 9.1.0.0 | 25370929 |
+| VCF Installer / SDDC Manager | 9.1.0.0 | 25371088 |
+
+> 完整 BOM 含 VCF Operations for Logs / Fleet Management 等其餘元件，以官方 BOM 頁面為準。
+
+---
+
+## 7. 官方宣稱數字（核對表）
+
+| 指標 | 數字 | 來源性質 |
 |------|------|----------|
-| **Deploy** | 全新部署 | 綠地（greenfield）全新環境建置 |
-| **Converge** | 收斂現有環境 | 將現有環境收斂進 VCF 平台管理 |
-| **Import** | 匯入現有環境 | 將既有環境匯入納管 |
+| Memory Tiering TCO 降低 | 約 40% | 官方部落格 / 文件描述 |
+| vMotion Encryption Offload CPU 節省 | 約 70% | 官方描述 |
+| ESX Live Patching 修補覆蓋 | 約 80% | 官方描述 |
+| ESX 主機規模上限 | 5,000 | 官方描述 |
+| VKS 每 Supervisor 叢集數 | 500 | 官方描述 |
 
-> 三種方式的詳細前置條件、限制與步驟，以官方文件為準。
-
-選擇建議（一般原則）：
-
-- 沒有既有環境、要從零建置 → **Deploy**
-- 有既有環境、希望逐步收斂納入統一管理 → **Converge**
-- 有既有環境、希望直接匯入納管 → **Import**
+> 上述數字以官方文件與實際環境為準，正式專案勿直接引為承諾值。
 
 ---
 
-## 13. 成本與 TCO 效益
+## 8. 規劃與導入 Checklist
 
-VCF 9.1 在成本面提出以下可量化效益（數字依官方查證事實）：
+### 8.1 VCF 9.0 導入
+- [ ] 確認目標版本：新案建議直接評估 9.1；既有 9.0 環境確認是否需升至 9.0.2。
+- [ ] 規劃 Fleet / Instance / Domain 階層與邊界。
+- [ ] 每 Fleet 單一 VCF Operations + 單一 VCF Automation 容量規劃。
+- [ ] 設計 VCF Identity Broker 與 IdP 整合（SAML / OIDC），保留 ESXi / SDDC Manager 個別設定。
+- [ ] 規劃 VPC networking 與自動化憑證處理。
+- [ ] 既有環境評估 converge / import 可行性。
+- [ ] 確認採 vLCM image-based 管理。
 
-| 效益項目 | 幅度 | 來源機制 |
-|----------|------|----------|
-| Server 成本 | 約省 **40%** | Memory tiering |
-| 儲存 TCO | 約降 **39%** | 壓縮去重（compression / dedup） |
-| Kubernetes 營運成本 | 約降 **46%** | VKS / CaaS 平台化營運 |
-
-> 上述為官方提出之效益參考值，實際結果依環境、工作負載與配置而異，最終以官方文件與實測為準。
-
----
-
-## 14. 規模與上限參考表
-
-| 項目 | 數值 | 版本 |
-|------|------|------|
-| Host 上限 | 5000 | 9.1 |
-| 並行升級叢集數 | 256（由 64 提升） | 9.1 |
-| VKS 控制平面支援叢集數 | 500 | 9.1 |
-| VKS provisioning 速度提升 | 約 70% | 9.1 |
-
-> 其他未列出之組態上限（configuration maximums），請以官方 Configuration Maximums 文件為準。
-
----
-
-## 15. 導入規劃 Checklist
-
-規劃 VCF 9 導入時，建議逐項確認：
-
-- [ ] 確認目標版本（9.0 或 9.1）與其官方支援週期（以官方文件為準）
-- [ ] 確認核心元件版本基準：vSphere 9 / ESX 9 / vSAN 9 / NSX 9
-- [ ] 確認生命週期一律使用 **vLCM image**（baseline 不再支援）
-- [ ] 選定落地方式：**Deploy / Converge / Import**
-- [ ] 確認是否使用 VCF Installer / SDDC Manager Appliance 單一 appliance 部署
-- [ ] 確認是否使用內建 **Quick Start App**
-- [ ] 規劃 **VCF Operations**（取代 Aria Operations / vROps）的營運監控
-- [ ] 規劃 **VCF Automation**（取代 Aria Automation）的自動化與自助服務
-- [ ] 若有自動化 / IaC 需求，規劃 **Unified SDK**（Python / Java / PowerCLI / Terraform）
-- [ ] 若有容器需求，規劃 **VKS** 與 **CaaS 自助 namespace**（registry / ingress / quota / identity）
-- [ ] 若有 AI 工作負載，規劃 **Private AI** 與 **GPU Metrics**
-- [ ] 評估 **memory tiering** 與 **壓縮去重** 的成本效益
-- [ ] 若有 EVPN 網路需求，確認 **Unified EVPN**（Arista / Cisco / SONiC）相容性
-- [ ] 評估是否啟用 **Native Object Storage（S3）**（注意為 Tech Preview）
-- [ ] 確認規模需求是否落在上限內（host 5000 / VKS 500 clusters 等）
+### 8.2 VCF 9.1 評估 / 導入
+- [ ] 以官方 BOM 核對全部元件版本 / build 號（皆 9.1.0.0）。
+- [ ] 評估 Enhanced NVMe Memory Tiering 硬體（本地 NVMe）與成本分析。
+- [ ] 規劃 vSphere Elastic Provisioning 網路影像基礎（UEFI / HTTP-S、自動發現）。
+- [ ] 確認 ESX Live Patching 前提：主機需 TPM-enabled。
+- [ ] 選定 API-first SDK 語言（Python/Java/PowerCLI 9.1/Terraform v2.16.0）。
+- [ ] 即時監控整合評估 Real-Time Metrics API（Prometheus/Grafana/PromQL）。
+- [ ] 合規對應 Advanced Cyber Compliance（PCI DSS、持續性修復）。
+- [ ] 勒索復原評估 vSAN for Recovery clean room 與 CrowdStrike EDR。
+- [ ] 規模 / 並行升級規劃（至 5,000 ESX、VKS 500 叢集/Supervisor）。
+- [ ] GPU 工作負載確認硬體（AMD Instinct MI350 DirectPath I/O）與網路夥伴 (Arista/Cisco/SONiC)。
+- [ ] 升級至 9.1 前確認元件升級順序（官方升級指南）。
 
 ---
 
-## 16. 升級與遷移 Checklist
+## 9. 常見問答 FAQ
 
-- [ ] 盤點現有環境是否使用 **baseline** 模式（VCF 9 不再支援，需轉換為 vLCM image）
-- [ ] 盤點現有 Aria Operations / vROps 與 Aria Automation 部署，規劃轉換至 VCF Operations / VCF Automation
-- [ ] 確認既有環境採用 **Converge** 或 **Import** 的適用性與前置條件（以官方文件為準）
-- [ ] 規劃並行升級策略（9.1 支援並行升級至 256 clusters）
-- [ ] 確認升級後元件版本基準符合 vSphere 9 / ESX 9 / vSAN 9 / NSX 9
-- [ ] 確認既有自動化腳本 / API 整合是否需配合 Unified SDK 調整
-- [ ] 規劃升級維護視窗與回復（rollback）策略（細節以官方文件為準）
-- [ ] 確認儲存（vSAN / SAN / NAS）在 VCF Operations 統一 dashboard 的納管狀態
-- [ ] 升級後驗證統一 storage dashboard 與 GPU Metrics（若適用）可視性
+**Q1. 目前 VCF 9 最新版本是哪一個？**
+A. VCF 9.1.0.0（GA 2026-05-12，Build 25377994）。9.0 線最新維護版為 9.0.2.0（2026-01-20）。
 
----
+**Q2. VCF 9 還是以 SDDC Manager 為核心嗎？**
+A. 不是。自 9.0 起改以 VCF Operations 為統一營運平面、VCF Automation 為自助服務平面，並引入 Fleet → Instance → Domain 階層與 VCF Identity Broker。SDDC Manager 角色轉變，VCF Installer / Fleet Management 接手大量生命週期作業。
 
-## 17. 常見問題（FAQ）
+**Q3. vRealize / Aria 套件去哪了？**
+A. 已更名整併為 VCF Operations 與 VCF Automation。「SDDC Manager + vRealize Suite」是過時認知。
 
-**Q1：VCF 9 和過去最大的差異是什麼？**
-A：VCF 9 是 Broadcom 時代第一個重大架構統一版本，由「多產品集合」走向「單一平台」，統一 lifecycle 與營運層，並由 VCF management services 提供共用 runtime。
+**Q4. 每個 Fleet 可以有幾個 VCF Operations / Automation？**
+A. 各一個 —— 每個 Fleet 僅有一個 VCF Operations 實例與一個 VCF Automation 實例。
 
-**Q2：Aria 系列產品到哪去了？**
-A：Aria Operations / vROps 被 **VCF Operations** 取代；Aria Automation 被 **VCF Automation** 取代。
+**Q5. ESX Live Patching 有什麼前提？**
+A. 限 TPM-enabled 主機；修補套用於執行中 kernel memory，VM 持續運作、無維護視窗，涵蓋約 80% 修補。
 
-**Q3：還能用 baseline 管理叢集嗎？**
-A：不行。VCF 9 全面採用 **vLCM image**，**baseline 不再支援**。
+**Q6. 9.1 在 API / 自動化上的最大改變是什麼？**
+A. API-first：以 OpenAPI 為單一事實來源，跨 Python/Java/PowerCLI/Terraform 達成功能對等，並新增 Prometheus 相容的 Real-Time Metrics API、VGFA 與 vCenter Server Query API。
 
-**Q4：VCF 與 VVF（vSphere Foundation）的安裝程式一樣嗎？**
-A：是。兩者共用同一套 VCF Installer，並內建 Quick Start App。
+**Q7. 升級流程在哪裡查？**
+A. 升級流程（5.x→9.0、9.0→9.1）與元件升級順序請參考官方升級指南；在 Claude 環境中請改用 `vcf-upgrade` skill。
 
-**Q5：Native Object Storage（S3）可以正式上線使用嗎？**
-A：在 9.1 中為 **Tech Preview**（技術預覽），是否可用於正式環境以官方文件為準。
-
-**Q6：9.1 的成本效益數字是保證值嗎？**
-A：否。約省 40% server 成本、儲存 TCO 約降 39%、K8s 營運成本約降 46% 為官方提出之效益參考值，實際依環境而異。
+**Q8. 官方那些百分比數字可以直接寫進提案嗎？**
+A. 40% TCO、70% CPU、80% 修補等來自官方部落格/文件描述，正式專案請以官方文件與實際環境驗證後使用，勿當作承諾值。
 
 ---
 
-## 18. 名詞對照表（Aria → VCF）
+## 10. 參考來源
 
-| 舊名稱 | VCF 9 新名稱 | 角色 |
-|--------|--------------|------|
-| Aria Operations / vRealize Operations / vROps | VCF Operations | 統一營運與監控 |
-| Aria Automation | VCF Automation | 自動化與自助服務 |
-| 各產品分散 API binding | Unified SDK | 統一 API binding（OpenAPI 基礎） |
-| baseline（生命週期） | vLCM image | 叢集生命週期管理 |
-
----
-
-## 19. 參考來源
-
-1. VMware Cloud Foundation 9.0 and later — Broadcom TechDocs
-   https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0.html
-2. What's New in VMware Cloud Foundation 9.0 — Solution Brief
-   https://www.vmware.com/docs/whats-new-in-vmware-cloud-foundation-9-0-solution-brief
-3. VMware Cloud Foundation 9.1.0.0 Release Notes — What's New — Broadcom TechDocs
-   https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/what-s-new.html
-4. VMware Cloud Foundation 9.1 — Solution Brief
-   https://www.vmware.com/docs/vmware-cloud-foundation-9-1-solution-brief
-5. VMware Cloud Foundation 9 Ushers in New Support Model and Release Cadence — VMware Cloud Foundation Blog
-   https://blogs.vmware.com/cloud-foundation/2025/07/16/vmware-cloud-foundation-9-ushers-in-new-support-model-and-release-cadence/
+- VCF 9.1 What's New: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/what-s-new.html
+- VCF 9.1 Release Notes: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes.html
+- VCF 9.1 Bill of Materials: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes/vmware-cloud-foundation-bill-of-materials.html
+- VCF 9.0 Release Notes: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/release-notes/vmware-cloud-foundation-90-release-notes.html
+- VCF 9.0.1 Release Notes: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/release-notes/vmware-cloud-foundation-9-0-1-release-notes.html
+- VCF 9.0.2 Release Notes: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/release-notes/vmware-cloud-foundation-9-0-2-release-notes.html
+- VCF 9.1 公告部落格: https://blogs.vmware.com/cloud-foundation/2026/05/05/announcing-vcf-9-1-modern-private-cloud-built-for-efficiency-and-resilience/
+- VCF 9.1 Programmable Infrastructure 部落格: https://blogs.vmware.com/cloud-foundation/2026/05/25/unlocking-the-full-potential-of-programmable-infrastructure-with-vmware-cloud-foundation-9-1-new-features-and-capabilities/
+- VCF 9.1 Solution Brief: https://www.vmware.com/docs/vmware-cloud-foundation-9-1-solution-brief

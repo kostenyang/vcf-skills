@@ -1,95 +1,121 @@
-# VCF 升級技術參考：5.2 → 9.0（含 Converge / Import）與 9.0 → 9.1
+# VCF 升級／收斂／匯入：技術細節與 Checklist (upgrade-5.2-to-9.0.md)
 
-## 1. 全景：四種落地方式
+> 本檔收錄四種路徑的具體版本需求、先決條件、升級順序、Top 10 Q&A 與 checklist。所有數字與限制以官方 techdocs Release Notes 為最終依據。
 
-| 方式 | 起點 | 終點 | 一句話 |
-|------|------|------|--------|
-| Deploy | 無 | VCF 9 | 綠地新建 |
-| Converge | 既有 vSphere/vCenter + ESX | VCF / VVF 平台 | 原地轉換納管 |
-| Import | 既有環境 | VCF 管理 | 匯入納管（需求略不同於 Converge） |
-| Upgrade | 既有 VCF | 較新 VCF | 版本往上升 |
+## 1. 四種路徑定義
 
-> Converge 與 Import 的需求「大致相同、細節有差」。Converge 偏「轉換」，
-> Import 偏「匯入既有」。
+| 路徑 | 適用情境 | 關鍵說明 |
+|---|---|---|
+| Deploy（全新 / Greenfield） | 建立全新 VCF Fleet / 執行個體 | 可直接部署至 9.0.2 而無須中間版本；VCF Installer 處理初始元件，其餘元件安裝後手動完成。管理網域 (Management Domain) 為建立 VCF 執行個體的最小邏輯單位。 |
+| Converge（既有 vSphere 收斂） | 將獨立 vSphere 轉為 VVF 或 VCF | 須符合最低版本與特定收斂順序（先管理平面，再核心 SDDC 元件）。提供 pre-convergence 選項：可先獨立升級元件到 9.0.x，享 90 天評估期。 |
+| Import（既有納管 / Brownfield） | 將既有 vCenter 匯入為 Workload Domain | 於管理網域建立後執行；NSX 4.x 部署可先以 WLD 匯入再升級。 |
+| Upgrade（升級） | VCF 5.x → 9.0.x / 9.1 | 先升級管理平面，再依序升級核心 SDDC 元件。 |
 
-## 2. 5.2 → 9.0：前置條件全清單
-
-### 2.1 生命週期 (LCM)
-- [ ] 所有 ESX 叢集從 **baseline → vLCM image**（9 不支援 baseline）。
-- [ ] image 化須在 **ESX host 升級階段之前**完成。
-
-### 2.2 組態 remediation
-- [ ] 移除 **Enhanced Linked Mode (ELM)**。
-- [ ] **DVS** 升到支援版本。
-- [ ] 清理其他不相容組態（依 precheck 結果）。
-
-### 2.3 元件最低版本（依目標版本）
-| 目標 | vCenter | NSX | ESX |
-|------|---------|-----|-----|
-| 9.0.0 | — | — | 須先升到 **9** 再轉換 |
-| 9.0.1 | ≥ 8.0 U1a | ≥ 4.1.0.2 | ≥ 8.0 U1a |
-
-### 2.4 中間步驟 (interim)
-- 依現有 vSphere / NSX / VCF Operations 版本，可能需先升到中間版本，
-  再進 9.0。務必查 Interop Matrix 與 Release Notes。
-
-### 2.5 硬體
-- [ ] 確認在 VCF 9 / vSAN ESA HCL。
-
-## 3. Converge 既有 vSphere → VCF 9.0 流程概念
-
-1. 前置 precheck（ELM、DVS、版本、HCL）。
-2. 完成 remediation（image 化、移除 ELM、DVS 升版）。
-3. 元件升到符合目標 9.0.x 的最低版本（必要時走 interim）。
-4. 執行 Converge：把 vCenter instance + ESX hosts 納入 VCF/VVF。
-5. 驗證納管狀態、LCM、營運面。
-
-## 4. 升級順序（管理域優先）
+## 2. 5.2 → 9.0 升級順序（必背）
 
 ```
-1. 規劃 / 盤點
-2. 前置 remediation (image / ELM / DVS / interim)
-3. 備份 (SDDC Manager / vCenter / NSX / 設定)
-4. 管理域：SDDC Manager → vCenter → NSX → ESX
-5. 工作負載域：vCenter → NSX → ESX (逐域)
-6. 營運 / 自動化：VCF Operations / Automation
-7. 驗證 + 收尾
+VCF Operations 元件 → SDDC Manager → NSX → vCenter → ESX hosts
 ```
 
-## 5. 9.0.x → 9.1 升級
+- vLCM Image 必備：所有 ESX cluster 必須在 ESX 升級階段前，由 baseline 管理轉換為 vSphere Lifecycle Manager (vLCM) image；VCF 9.0 不再支援 baselines。
+- VCF Operations 為 9.0 強制元件；升級時必定部署 Aria Lifecycle（9.0 更名 VCF Fleet Management）與 VCF Operations，即使原本未用 LCM/Aria Suite。
+- Aria Suite 不需 decouple；可先升級至 VCF 9 相容版本再續行。
 
-- 屬同系列升級（例：9.0.2 → 9.1），相對單純。
-- 仍須：
-  - [ ] 對 BOM / interop（確認各元件目標版本）。
-  - [ ] 走 VCF Operations / Lifecycle 升級流程。
-  - [ ] 利用 9.1 的並行升級能力（最高 256 clusters）規劃維護窗。
+## 3. 升級前置作業 Checklist
 
-## 6. 風險、回退與維護窗
+- [ ] 以**外部 SFTP** 備份 SDDC Manager。
+- [ ] vCenter 升級前做 **file-based backup**。
+- [ ] 確認**無進行中的網域操作**（建立 / 擴充 / 縮減 WLD）。
+- [ ] 確認**無失敗工作流程**、無資源處於 activating / error 狀態（若有，先聯絡 VMware Support）。
+- [ ] 下載並執行 **precheck**，通過後才可升級。
+- [ ] 將所有 ESX cluster 由 baseline 轉換為 **vLCM image**。
+- [ ] 確認硬體 / 韌體相容性（含 vSAN OSA 既有硬體）。
+- [ ] 規劃回復檢查點：以**每階段元件層級備份**作為個別失敗的回復點（無完整 rollback 機制）。
 
-- 每階段前快照 / 備份；定義 rollback 點。
-- skip-level（跳版）省時間，但須確認該路徑「受支援」。
-- 大規模環境評估並行升級能力與維護窗長度。
-- 5.2 → 9.0 是**架構性升級**，建議先在測試 / staging 完整演練。
+## 4. Top 10 Q&A（5.2 → 9.0）
 
-## 7. 升級專案 Checklist（總表）
+1. **升級順序？** VCF Operations → SDDC Manager → NSX → vCenter → ESX hosts。
+2. **一定要轉 vLCM image 嗎？** 是，ESX 升級前所有 cluster 必須轉換；9.0 不支援 baselines。
+3. **一定要 VCF Operations 嗎？** 是，9.0 強制元件，必定部署（含 VCF Fleet Management）。
+4. **要先備份什麼？** SDDC Manager（外部 SFTP）+ vCenter（file-based）。
+5. **vSAN OSA 還能用嗎？** 仍受支援、未棄用；既有硬體可續用，須驗證硬體 / 韌體相容性。
+6. **有 rollback 嗎？** 無完整 rollback；以每階段元件層級備份作為個別失敗回復點。
+7. **vIDM 怎麼辦？** vIDM → VIDB (VMware Identity Broker) 無直接升級 / 遷移路徑，須 greenfield 部署 VIDB。
+8. **VCD 能升嗎？** VCF 9.0 不支援 VMware Cloud Director，且無官方遷移路徑。
+9. **Aria Suite 要 decouple 嗎？** 不需要；可先升至 VCF 9 相容版本再續行。
+10. **整併式 (Consolidated) 設計主機數？** 建議最少 4 台（vSAN 最少 3 台）；外部儲存最少 2 台；上限每 cluster 96 hosts、每 vCenter 2,500 hosts。
 
-- [ ] 盤點現有版本（VCF / vCenter / NSX / ESX / vSAN / Operations）
-- [ ] 對 Interop Matrix，決定是否需 interim 版本
-- [ ] 所有叢集 image 化
-- [ ] 移除 ELM、修正 DVS
-- [ ] 元件達目標 9.0.x 最低版本
-- [ ] HCL 確認
-- [ ] 全面備份
-- [ ] 排定維護窗與 rollback 方案
-- [ ] 測試環境演練
-- [ ] 正式升級（管理域 → 工作負載域 → 營運層）
-- [ ] 升級後驗證
+## 5. Converge：vSphere → VCF 9.0 版本需求
 
-## 來源
-- https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/overview-of-deploy--converge--and-upgrade.html
-- https://blogs.vmware.com/cloud-foundation/2025/09/25/how-to-upgrade-to-vmware-cloud-foundation-9-0/
-- https://blogs.vmware.com/cloud-foundation/2025/11/20/upgrading-vmware-cloud-foundation-5-2-to-9-0-webinar-takeaways/
-- https://blogs.vmware.com/cloud-foundation/2025/12/18/upgrading-vmware-cloud-foundation-5-2-to-9-0-the-top-10-questions-answered/
-- https://blogs.vmware.com/cloud-foundation/2026/02/05/how-to-converge-a-vmware-vsphere-environment-to-vmware-cloud-foundation-9-0/
-- https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/converging-your-existing-vsphere-infrastructure-to-a-vcf-or-vvf-platform-/supported-scenarios-to-converge-to-vcf/converge-your-existing-vcenter-instance-and-esx-hosts.html
-- https://angrysysops.com/2026/05/27/upgrading-vmware-cloud-foundation-from-9-0-2-to-9-1-practical-runbook-notes/
+| 目標 | vCenter 最低 | ESX 最低 | NSX |
+|---|---|---|---|
+| VCF 9.0.0（不含 NSX） | 9.0.0 | 9.0.0 | 不支援收斂，必須全新部署 |
+| VCF 9.0.1（不含 NSX） | 9.0.1 | 9.0.1 | 全新部署 |
+| VCF 9.0.2（不含 NSX） | 9.0.2 | 9.0.2 | 全新部署 |
+| 含 NSX 收斂（9.0.1 / 9.0.2） | 8.0 Update 3 | 8.0 Update 1 | NSX 最低 4.2.1 |
+
+收斂注意事項：
+- **ELM**：VCF 9 不再支援，收斂前必須先停用；功能由 VCF Operations 接手。
+- **DVS**：收斂前須修正組態，移除 ELM 或將 switch 升級至受支援版本。
+- 收斂前會驗證 storage / network / compute、硬體、switch 版本與預設值是否符合 VCF 建議組態。
+- **主要儲存 (principal storage)**：VCF 9 支援 vSAN、Fibre Channel、NFS（不再強制管理網域只能用 vSAN）。
+- **收斂順序**：先管理平面，再核心 SDDC 元件。
+
+## 6. Import：版本需求（所有版本）
+
+| 元件 | 最低需求 |
+|---|---|
+| 目標 VCF | 9.0.x |
+| vCenter | 8.0 Update 1 以上 |
+| ESX | 8.0 Update 1 以上 |
+| NSX | 4.1.0.2 以上 |
+
+- 於管理網域建立後執行；NSX 4.x 部署可先以 WLD 匯入再升級。
+- Import 前同樣須先停用 ELM。
+
+## 7. VCF 9.1 升級
+
+- **來源版本**：可從 VCF 5.2.x（序列或 skip-level）或 VCF 9.0.x（直接升級）升至 9.1；早於 5.2 須先升至 5.2.x。
+- **強制範圍**：升 9.1 時，fleet 層級與管理網域元件必須升至 9.1；工作負載網域升級非強制，可作為 Day-N 後續執行。
+- **升級序列**：5.2.x→9.1 與 9.0.x→9.1 皆為約 23 個有序步驟；9.0.x→9.1 第一步通常為將 VCF Identity Broker 轉移到管理網路（若原部署於 NSX overlay segment）。
+- **新元件**：VCF Management Services（整合 Fleet lifecycle 與 SDDC lifecycle）與 License Server（VCF 執行個體授權所必需）。
+- 9.0 的 vIDB 外部多節點 appliance cluster 於 9.1 直接遷入 VCF Management Services，原獨立 VM 關機後可除役。
+- VCF Operations / Operations for logs/networks / Automation / Identity Broker 的生命週期管理，於 VCF Operations 升至 9.1 時轉移到新的 fleet/SDDC lifecycle 元件。
+
+### IP / CIDR 規劃（以官方文件為準）
+- VCF Management Services 部署最少需 **12 個 IP**。
+- VCF services runtime 預設內部 CIDR 為 **198.18.0.0/15**；若與現網衝突，須改為 **240.0.0.0/15** 或 **250.0.0.0/15**。
+
+### 9.1 已知問題
+- 若 9.0.x 的 Identity Broker 部署在**非管理網路**，升級至 9.1 會失敗（故首步常為遷移 Identity Broker）。
+- vCenter **in-place 升級 (9.0.x→9.1.0)** 後，**VM 硬體版本需手動升級**。
+
+## 8. 授權變更
+- 自 VCF 與 vSphere Foundation 9.0 起，授權改由 **VCF Operations 跨整個 fleet 管理**（透過 VCF Business Services console）。
+- VCF 9.1 另引入專屬 **License Server**。
+
+## 9. 過時認知更正表
+
+| 過時認知 | 正確說法 |
+|---|---|
+| VCF 部署一定走 SDDC Manager bring-up | 9.0 起改以 VCF Installer + VCF Operations 工作流程為主 |
+| 升級不一定要 Aria/Operations | VCF Operations 為 9.0 強制元件，必定部署 |
+| ESX 可續用 vLCM baselines | 9 僅支援 vLCM images，升級前須轉換 |
+| ELM 可沿用 | 9 不支援 ELM，匯入/收斂前須停用 |
+| vIDM 可升級為新身分服務 | vIDM→VIDB 無直接路徑，須 greenfield 部署 VIDB |
+| 管理網域只能用 vSAN | 9 支援 vSAN / FC / NFS |
+| VCD 可移轉至 VCF 9 | 不支援且無官方遷移路徑 |
+| vSAN OSA 已棄用 | OSA 仍受支援，須驗證硬體/韌體相容性 |
+
+## 參考來源
+
+- <https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-0/deployment/overview-of-deploy--converge--and-upgrade.html>
+- <https://blogs.vmware.com/cloud-foundation/2025/12/18/upgrading-vmware-cloud-foundation-5-2-to-9-0-the-top-10-questions-answered/>
+- <https://blogs.vmware.com/cloud-foundation/2026/04/16/converging-vmware-vsphere-to-vmware-cloud-foundation-9-0-the-top-10-questions-answered/>
+- <https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/deployment/upgrading-cloud-foundation.html>
+- <https://blogs.vmware.com/cloud-foundation/2026/05/28/announcing-the-vmware-cloud-foundation-9-1-upgrade-planning-tool/>
+- <https://blogs.vmware.com/cloud-foundation/2026/05/05/announcing-vcf-9-1-modern-private-cloud-built-for-efficiency-and-resilience/>
+- <https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-9-0-and-later/9-1/release-notes/vmware-cloud-foundation-9-1-0-0-release-notes.html>
+- <https://blogs.vmware.com/cloud-foundation/2025/11/20/upgrading-vmware-cloud-foundation-5-2-to-9-0-webinar-takeaways/>
+- <https://blogs.vmware.com/cloud-foundation/2026/02/05/how-to-converge-a-vmware-vsphere-environment-to-vmware-cloud-foundation-9-0/>
+- <https://knowledge.broadcom.com/external/article/440630/upgrade-sequence-and-related-issues-for.html>

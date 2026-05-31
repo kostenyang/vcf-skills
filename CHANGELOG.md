@@ -2,6 +2,21 @@
 
 依日期記錄 skill 與技術文件的變動。版本與相容性以 Broadcom 官方文件為準。
 
+## 2026-05-31 — 上網研究優化（v2）
+
+- 用 workflow 讓 agent 實際上網（Broadcom TechDocs + VMware blog，98 次查詢）重寫全部 5 個 skill 與 docs。
+- 重大更新與校正：
+  - **VCF 9**：補上 9.0/9.0.1/9.0.2/9.1 版本時間線與 build 號（9.1.0.0 GA 2026-05-12 Build 25377994）、
+    Fleet→Instance→Domain 階層、VCF Operations/Automation 單一實例、VCF Identity Broker、
+    Enhanced NVMe Memory Tiering、ESX Live Patching、vSphere Elastic Provisioning 等。
+  - **VCF 5.2.1**：補上完整 BOM（vCenter 8.0 U3c / ESXi 8.0 U3b / NSX 4.2.1 等）、
+    校正「baseline→image 轉換」其實要到 5.2.2、Depot 驗證變更 KB 390098、SSH 預設關閉 KB 86230。
+  - **HCX**：校正 **WAN Optimization 已於 4.11.3 棄用、4.11.4 移除**、最新版 4.11.x、
+    EOS 時程、VCF Solution Licensing 自動繼承 Enterprise、並行規模 300/600/1000。
+  - **升級**：補上 9.1 Upgrade Planning Tool、VCF Management Services、升級順序、
+    vIDM→VIDB 無遷移路徑、principal storage 擴展 vSAN/FC/NFS、VCD 不支援等校正。
+  - **VCD**：補強多層租戶、IP Spaces、Data Center Group、CSE 與最新版本資訊。
+
 ## 2026-05-31 — 初版
 
 - 新增 5 個 Claude Code skill：`vcf-9`、`vcd`、`hcx`、`vcf-521`、`vcf-upgrade`。

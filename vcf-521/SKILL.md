@@ -1,73 +1,113 @@
 ---
 name: vcf-521
-description: >-
-  VMware Cloud Foundation 5.2.1 專門知識 skill。涵蓋 VCF 5.2.1 的新功能、
-  SDDC Manager、Workload Domain、vLCM baseline 與 image-based 混用、
-  NSX in-place 升級、vSAN TiB 容量授權、憑證/密碼管理整合進 vSphere Client、
-  獨立 SDDC Manager 升級 (不升整個 BOM)、循序與跳版升級 (skip-level)。
-  當使用者詢問 VCF 5.2.1、VCF 5.2、SDDC Manager 5.2、Workload Domain 設計、
-  vLCM baseline vs image、VCF 5.x 維運、或 VCF 5.2.1 相關規劃/升級/簡報時觸發。
-  注意：5.2.1 是 VCF 9 之前的主流 5.x 版本，常作為升級到 9.0 的來源版本。
+description: |
+  VMware Cloud Foundation 5.2.1 專門知識 skill。涵蓋 VCF 5.2.1 的 BOM 元件版本 (SDDC Manager / vCenter 8.0 U3c / ESXi 8.0 U3b / NSX 4.2.1 / vSAN Witness 8.0 U3 / Aria Suite Lifecycle 8.18)、新功能 (vCenter Reduced Downtime Upgrade RDU、NSX in-place 升級、vLCM baseline 與 image 同域混用、vSAN TiB 容量授權 License Now、Private AI Foundation 與 DSM 整合、憑證/密碼管理整合進 vSphere Client、VPC/CCI 自助服務、VCF Import Tool)、循序與跳版 (skip-level) 升級路徑 (從 VCF 4.5+)、以及維運注意事項 (Depot 驗證變更 KB 390098、SSH 預設關閉 KB 86230、棄用事項)。當使用者詢問 VCF 5.2.1、VCF 5.2、SDDC Manager 5.2、Workload Domain 設計、vLCM baseline vs image、baseline→image 轉換 (5.2.2)、VCF 5.2.x BOM/build number、5.2.x 維運/升級規劃、或作為升級到 VCF 9.x 的來源版本盤點時觸發。也適用於 VCF 5.2.1 簡報、POC、相容性比對需求。注意：5.2.1 屬「VCF 5.2 and earlier」分支，與新一代 VCF 9.x 為不同產品線；常作為升級到 9.x 的來源版本。
 ---
 
 # VMware Cloud Foundation 5.2.1
 
-VCF 5.2.1 是 VCF 9 之前廣泛部署的 5.x 版本，採傳統 SDDC Manager + Workload Domain
-架構。本 skill 用來回答 5.2.1 的架構、新功能與維運；它也常是「升級到 VCF 9.0」
+VCF 5.2.1 是 VMware Cloud Foundation 5.2 系列的第一個更新版（由 Broadcom 發行，
+GA 2024-10-09，Build 24307856），採傳統 SDDC Manager + Workload Domain 架構。
+本 skill 用來回答 5.2.1 的 BOM、架構、新功能與維運；它也常是「升級到 VCF 9.x」
 的來源版本。
+
+> 注意：5.2.x 屬「VCF 5.2 and earlier」分支；新一代 VCF 9.x（9.0 / 9.1）為不同產品線。
+> 確切版號、build number 與相容性一律以 Broadcom TechDocs Release Notes 為準。
 
 ## 使用時機
 
 - 維運 / 規劃既有 VCF 5.2.x 環境
+- 查 VCF 5.2.1 BOM 元件版本與 build number
 - VCF 5.2.1 新功能與 5.2 → 5.2.1 升級評估
 - Workload Domain / SDDC Manager 設計
-- vLCM baseline 與 image-based 混用情境
-- 作為升級到 VCF 9.0 的「來源版本」盤點
+- vLCM baseline 與 image 混用情境，以及 baseline→image 轉換規劃
+- 循序 (sequential) / 跳版 (skip-level) 升級路徑評估
+- 作為升級到 VCF 9.x 的「來源版本」盤點
+- Depot 下載失敗、SSH 預設關閉等維運疑難排解
 
-> 5.2 → 9.0 的跨大版本升級流程請用 `vcf-upgrade` skill；VCF 9 架構用 `vcf-9` skill。
+> 5.2.x → 9.x 的跨大版本升級流程請用 `vcf-upgrade` skill；VCF 9 架構用 `vcf-9` skill；
+> 製作簡報用對應的 `vcf-*-ppt` / 產業 skill。
 
-## VCF 5.2.1 架構重點
+## 核心重點
 
 ```
 SDDC Manager (LCM + 自動化大腦)
 ├── Management Domain   ← 跑 vCenter / NSX / SDDC Manager / 管理元件
 └── VI Workload Domain  ← 跑業務工作負載 (可多個)
-    └── Cluster (vLCM baseline 或 image)
+    └── Cluster (vLCM baseline 或 vLCM image，5.2.1 可同域混用)
 ```
 
 - **SDDC Manager**：負責 bring-up、Workload Domain 生命週期、自動化與 LCM。
-- **Workload Domain**：管理域 + 一或多個 VI 工作負載域。
-- 元件：vSphere 8.x / vSAN 8.x / NSX 4.x（依 5.2.1 BOM）。
+- **vLCM 混用**：5.2.1 支援同一 Workload Domain 內同時存在 baseline 叢集與 image 叢集。
+- **vLCM 轉換的關鍵限制**：5.2.1 **不支援** 將既有 baseline 叢集 *轉換 (transition)* 成 image
+  叢集；此功能要到 **VCF 5.2.2** 才提供（PowerShell 腳本或 SDDC Manager API）。
+  規劃升級到 VCF 9.x（僅支援 image-based）時務必注意此前置步驟。
+- **升級彈性**：可從 VCF 4.5（或更新版本）做循序或跳版 (skip-level) 升級；
+  管理域與所有 VI 工作負載域須升到相同版本。
 
-## 5.2.1 主要新功能
+## 版本與新功能
 
-- **同一 Workload Domain 內混用 vLCM baseline 與 image-based 叢集**：
-  可在同一域同時部署 / 升級 baseline 叢集與 image 叢集。
-- **NSX in-place 升級**：對使用 vLCM baseline 的叢集支援 in-place 升級，
-  **升級時不需把 host 進入 maintenance mode**。
-- **vSAN TiB 容量授權 (License Now)**：可在 SDDC Manager UI 以「每 TiB 容量」
-  套用 vSAN add-on 授權，擴充 workload domain / cluster 儲存容量。
-- **憑證與密碼管理整合進 vSphere Client**：SDDC Manager 的憑證、整合式 CA、
-  系統使用者密碼管理，現可從 vSphere Client 的 Administration 區操作。
-- **獨立 SDDC Manager 升級**：SDDC Manager 升到 5.2 以上後，可單獨取得
-  SDDC Manager 的新功能與安全修補，**不必升整個 VCF BOM**。
-- **升級彈性**：可從 VCF 4.5.0 或更新版本，做**循序或跳版 (skip-level)** 升級到 5.2.1。
+### VCF 5.2.1 BOM 核心元件
 
-詳細內容見 `references/vcf-5.2.1.md`。
+| 元件 | 版本 | Build | 日期 |
+|------|------|-------|------|
+| SDDC Manager | 5.2.1 | 24307856 | 2024-10-09 |
+| vCenter Server | 8.0 U3c | 24305161 | 2024-10-09 |
+| ESXi | 8.0 U3b | 24280767 | 2024-09-17 |
+| NSX | 4.2.1 | 24304122 | 2024-10-09 |
+| vSAN Witness Appliance | 8.0 U3 | 24022510 | 2024-06-19 |
+| Aria Suite Lifecycle | 8.18 | 24029603 | 2024-07-23 |
 
-## 作為升級來源的重要性
+（vSAN 版本隨 ESXi 8.0 U3；其餘 Aria 元件由 Aria Suite Lifecycle 管理。明細以官方 BOM 表為準。）
 
-- VCF 9.0 的主要升級來源是 **VCF 5.x**。
-- 在升到 9.0 前，5.2.1 環境須完成：所有叢集轉成 **vLCM image**（baseline 在 9
-  不再支援）、移除 **ELM**、修正 **DVS 版本**等。
-- 來源端 vCenter / NSX 版本需符合 9.0 Converge/Import 的最低版本要求。
+### 5.2.1 相對 5.2 的新功能
+
+| 功能 | 重點 |
+|------|------|
+| vCenter Reduced Downtime Upgrade (RDU) | VCF 內以縮短停機方式升級 vCenter，停機可降至數分鐘等級 |
+| NSX In-Place Upgrade | 搭配 vLCM baseline，NSX 升級免進入 maintenance mode |
+| vLCM baseline + image 同域混用 | 同一 WLD 內可混用兩類叢集（尚不支援轉換，須到 5.2.2） |
+| vSAN TiB 容量授權 | SDDC Manager UI 提供「License Now」流程套用每 TiB 容量授權 |
+| Private AI Foundation | vSphere Client 導引式 NVIDIA GPU 設定；新增 DSM (Data Services Manager) 整合 |
+| 憑證 / 密碼管理整合 | SDDC Manager 憑證與密碼管理整合進 vSphere Client 的 Administration |
+| VPC / CCI 自助服務強化 | 開發者可自助佈建 compute/storage/network/security |
+| VCF Import Tool 強化 | 5.2.1.2 配套擴大匯入範圍：shared VDS、LACP、vLCM 混合匯入 |
+
+### 5.2.x 後續版本（升級規劃對照）
+
+| 版本 | GA | Build | 重點 |
+|------|------|-------|------|
+| 5.2.1.2 | 2025-04-30 | 24690695 | 5.2.1 修補（含 Import Tool 5.2.1.2、SDDC Manager 5.2.1.1） |
+| 5.2.2 | 2025-09-05 | 24936865 | vCenter/ESXi 8.0 U3g、NSX 4.2.3；首度支援 vLCM baseline→image 轉換；Bundle Transfer Utility 改為 VCF Download Tool |
+| 5.2.4 | 2026-05-27 | 25437063 | vCenter/ESXi 8.0 U3j、NSX 4.2.4；主要為錯誤與安全修正（5.2.x 系列最新） |
+
+完整細節、checklist 與來源見 `references/vcf-5.2.1.md`。
+
+## 與其他 skill 的關係
+
+- **`vcf-upgrade`**：5.2.x → 9.x 的跨大版本升級流程與前置盤點。
+- **`vcf-9`**：VCF 9.0 / 9.1 統一架構與新功能（升級目的地）。
+- **產業 / 簡報 skill**（`vcf-91-ppt`、`vcf-financial`、`vcf-telecom`、`vcf-semiconductor`、
+  `vcf-hybrid-cloud`、`vcf-ai`）：需要做 VCF 簡報時改用對應 skill，並以官方範本製作。
 
 ## 重要提醒
 
-- 5.2.1 仍是 baseline 與 image 可混用的版本；VCF 9 則僅支援 image。
-- 版本與相容性以 Broadcom TechDocs / Release Notes 為準。
+- **文件已遷移至 Broadcom TechDocs (techdocs.broadcom.com)**；舊 docs.vmware.com 連結會轉址，
+  最新內容以 TechDocs 為準。
+- **vLCM 轉換誤區**：5.2.1 只能「混用」baseline 與 image，**不能轉換**；轉換是 5.2.2 才有。
+- **Depot 驗證變更（KB 390098）**：2025 年 3 月起 depot URL 與驗證方式已更新，
+  未更新會出現「Depot Invalid User Credential」而無法下載 bundle。
+- **SSH 預設關閉（KB 86230）**：SSH service 預設停用，倚賴 SSH 的既有腳本需更新。
+- 升級前須先**備份 vCenter** 與 SDDC Manager。
+- **棄用事項**（列於 5.2.1 Release Notes）：Cloud Builder Appliance 及相關 API、
+  部分 NSX Edge 管理工作流程、永久授權 (perpetual) 模型、部分本地化語言、
+  API `POST /v1/bundles` 與 `POST /v1/product-version-catalog`。
+- VCF 已轉向訂閱制；perpetual licensing 已列為棄用。
 
 ## 權威來源
+
 - VCF 5.2.1 Release Notes: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vcf-release-notes/vmware-cloud-foundation-521-release-notes.html
-- 獨立 SDDC Manager 升級: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vmware-cloud-foundation-lifecycle-management/upgrade-sddc-manager-without-upgrading-vcf-lifecycle.html
-- VCF 5.2.1 on Dell VxRail Release Notes: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vcf-release-notes/vmware-cloud-foundation-521-on-dell-vxrail-release-notes.html
+- VCF 5.2.2 Release Notes: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vcf-release-notes/vmware-cloud-foundation-522-release-notes.html
+- VCF 5.2.4 Release Notes: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vcf-release-notes/vmware-cloud-foundation-524-release-notes.html
+- Upgrading Cloud Foundation: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/upgrading-cloud-foundation.html
+- vLCM baseline→image 叢集轉換 (5.2.2): https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vmware-cloud-foundation-lifecycle-management/vlcm-baseline-to-vlcm-image-cluster-transition-522-lifecycle.html
