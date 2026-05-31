@@ -2,3 +2,10 @@
 *.tmp
 .idea/
 .vscode/
+
+# 環境機密：實際主機名與帳密對應，絕不入庫
+lib/environments.psd1
+**/environments.psd1
+*.secret
+*.creds
+secrets/
