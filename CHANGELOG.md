@@ -2,6 +2,19 @@
 
 依日期記錄 skill 與技術文件的變動。版本與相容性以 Broadcom 官方文件為準。
 
+## 2026-05-31 — 實戰操作層（v3）
+
+- 將 skill 從「知識型」升級為「實戰操作型」，可在真實環境執行。
+- 新增共用安全框架 `lib/`：
+  - `environments.example.psd1`：UAT/TEST/PROD 環境分級範本。
+  - `VCFGuardrails.psm1`：`Invoke-VCFChange` 依 Tier 分級護欄（PROD 二次確認/單號/備份/dry-run）。
+  - `VCFConnect.psm1`：vCenter/SDDC/NSX/HCX 連線，憑證走 SecretManagement 不落地。
+- 用 workflow 為 5 個主題產生 **38 支腳本 + 14 份 runbook**（PowerCLI/Python/bash）：
+  - 每主題含 `scripts/{healthcheck,precheck,change}/` 與 `runbooks/`。
+  - 15 支變更腳本全部套用 `Invoke-VCFChange` 護欄。
+  - 各 `SKILL.md` 新增「實戰操作 (Operations)」章節。
+- `.gitignore` 排除 `environments.psd1` 等機密；README 新增操作與安全分級說明。
+
 ## 2026-05-31 — 上網研究優化（v2）
 
 - 用 workflow 讓 agent 實際上網（Broadcom TechDocs + VMware blog，98 次查詢）重寫全部 5 個 skill 與 docs。

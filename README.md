@@ -87,6 +87,44 @@ Claude 會依 `description` 自動判斷何時觸發該 skill。
 - 問 **多租戶雲（VCSP）** → `vcd`
 - 問 **遷移 / 上雲 / L2 延伸** → `hcx`
 
+## 實戰操作 (Operations) — 在真實環境執行
+
+這些 skill 不只是知識庫，也含**可在真實 VCF / VCD / HCX 環境執行的腳本**
+（healthcheck / precheck / change）與 runbook，全部套用共用安全框架 `lib/`。
+
+### 安全分級（核心）
+
+| Tier | 變更行為 |
+|------|----------|
+| **UAT**  | 允許變更，單次 `[y/N]` 確認 |
+| **TEST** | 允許變更，單次確認；建議先備份 |
+| **PROD** | 預設禁止；變更需 `-ForceProdChange` + 變更單號 + 確認備份 + 輸入完整環境名二次確認；破壞性操作再輸入 `DESTROY`；一律先 dry-run |
+
+- 健檢 / precheck = **唯讀**，可直接於 PROD 執行。
+- 任何寫入一律經 `Invoke-VCFChange` 護欄（見 [`lib/README.md`](lib/README.md)）。
+
+### 執行方式（重要）
+
+腳本以相對路徑載入 `lib/`，請**在 clone 下來的 repo 根目錄執行**：
+
+```powershell
+git clone https://github.com/kostenyang/vcf-skills.git
+cd vcf-skills
+cp lib/environments.example.psd1 lib/environments.psd1   # 填入你的 uat/test/prod
+Set-Secret -Name vcf-prod -Secret (Get-Credential)        # 存憑證 (不落地明文)
+
+# 唯讀健檢
+./vcf-9/scripts/healthcheck/Get-Vcf9Health.ps1 -Environment prod
+# 變更 (走護欄)
+./vcf-9/scripts/change/Set-Vcf9HostMaintenance.ps1 -Environment uat
+```
+
+> `environments.psd1`（含真實主機名/帳密對應）已被 `.gitignore` 排除，不會上傳。
+> 腳本僅為自動化輔助，**正式環境一律先在 UAT/TEST 演練**，升級/相容性以官方文件為準。
+
+各 skill 的 `scripts/`（healthcheck/precheck/change）與 `runbooks/` 內容，
+詳見各 `SKILL.md` 的「實戰操作 (Operations)」章節。
+
 ## 授權與免責
 
 僅供技術參考與內部教育用途。所有商標屬 Broadcom / VMware 所有。

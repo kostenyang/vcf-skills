@@ -96,3 +96,49 @@ VCF 升級與導入的技術知識庫，涵蓋 Deploy / Converge / Import / Upgr
 - Converge Top 10：<https://blogs.vmware.com/cloud-foundation/2026/04/16/converging-vmware-vsphere-to-vmware-cloud-foundation-9-0-the-top-10-questions-answered/>
 - VCF 9.1 Upgrade Planning Tool：<https://blogs.vmware.com/cloud-foundation/2026/05/28/announcing-the-vmware-cloud-foundation-9-1-upgrade-planning-tool/>
 - VCF 9.1 GA 公告：<https://blogs.vmware.com/cloud-foundation/2026/05/05/announcing-vcf-9-1-modern-private-cloud-built-for-efficiency-and-resilience/>
+
+## 實戰操作 (Operations)
+
+本章節提供可在真實環境執行的輔助腳本與操作手冊，協助 **VCF 5.2.x → 9.0.x / 9.1** 升級的「盤點 (precheck)、健檢 (healthcheck)、分階段觸發 (change)」。
+
+> 重要：本層腳本**僅輔助盤點與觸發**，不取代官方流程。升級的可行性、目標版本、相容性與分階段步驟，一律以 **VCF Upgrade Planning Tool**（<https://vmware.github.io/vcf-upgrade-planner/>）與對應版本 **Release Notes** 為最終依據。
+
+### 前置需求（共用 lib 框架）
+
+所有 PowerShell 腳本都依賴 `lib/` 共用框架，**不得自行硬寫連線或明文密碼**：
+
+```powershell
+Import-Module ./lib/VCFGuardrails.psm1 -Force   # Get-VCFEnvironment / Invoke-VCFChange
+Import-Module ./lib/VCFConnect.psm1    -Force   # Connect-VCFvCenter / Get-VCFRestToken / Get-VCFCredential / Disconnect-VCFAll
+```
+
+- 環境定義：複製 `lib/environments.example.psd1` 為 `lib/environments.psd1` 並填入 UAT / TEST / PROD 主機名與 `CredentialName`（`environments.psd1` 已被 `.gitignore` 排除）。
+- 憑證：一律存於 PowerShell **SecretManagement**（`Set-Secret -Name vcf-prod -Secret (Get-Credential)`），腳本以 `Get-VCFCredential` 取用，**絕不寫死密碼**。
+- 相依模組：`VMware.PowerCLI`、`Microsoft.PowerShell.SecretManagement`。REST 盤點之 Python 腳本需 `requests`；bash 腳本需 `curl` 與 `jq`。
+- 所有腳本以 `-Environment <uat|test|prod>` 帶入環境，由 `Get-VCFEnvironment` 解析 Tier。
+
+### scripts/ 內容
+
+| 路徑 | 類型 | 說明 |
+|---|---|---|
+| `scripts/precheck/Invoke-VCFUpgradePrecheck.ps1` | 唯讀 | **最重要**。5.2.x→9.0/9.1 升級前全面盤點：各元件版本 vs 目標最低需求、cluster 是否已 vLCM image 化、ELM 是否啟用（需停用）、DVS 版本、備份狀態、VCF Operations 需求；輸出 PASS/FAIL 報表（HTML/CSV/JSON 可匯出）。 |
+| `scripts/precheck/get_vcf_inventory.py` | 唯讀 | 純 REST 盤點（Python/requests）：透過 SDDC Manager Public API 取得 domains / clusters / hosts / bundles / upgradables，輸出 JSON 盤點清單。適合無 PowerCLI 的環境或 CI。 |
+| `scripts/precheck/trigger_sddc_official_precheck.sh` | 唯讀觸發 | 以 curl 觸發 SDDC Manager 內建的官方 system precheck 並輪詢結果（bash/curl/jq）。非破壞性，僅啟動唯讀健康檢查工作流程。 |
+| `scripts/healthcheck/Compare-VCFState.ps1` | 唯讀 | 升級前/後一致性驗證：擷取 host / cluster / 服務 / 版本快照（baseline / after），比對差異並標記異常。 |
+| `scripts/change/Invoke-VCFStagedUpgrade.ps1` | change | 以 `Invoke-VCFChange` 包裝，分階段觸發升級（SDDC Manager → NSX → vCenter → ESX 順序），每階段輪詢狀態並設驗證 gate；PROD 強制護欄（二次確認/單號/備份）。 |
+
+### runbooks/ 內容
+
+| 檔案 | 說明 |
+|---|---|
+| `runbooks/upgrade-5.2-to-9.0-runbook.md` | VCF 5.2.x → 9.0.x 升級總流程：前置 remediation（vLCM image 化、移除 ELM、DVS 升級）、分階段升級、各環境注意事項、驗證與回退檢查點。 |
+| `runbooks/upgrade-9.0-to-9.1-runbook.md` | VCF 9.0.x → 9.1 升級流程：Identity Broker 遷至管理網路、VCF Management Services 轉移、fleet/管理網域強制升級、WLD Day-N。 |
+| `runbooks/upgrade-precheck-runbook.md` | precheck 盤點操作手冊：如何跑腳本、判讀 PASS/FAIL、對應 remediation。 |
+
+### 安全分級提醒
+
+- **唯讀優先**：precheck / healthcheck / 盤點一律唯讀，直接查詢、不改動環境。
+- **變更必經護欄**：任何會改動環境的動作一律包在 `Invoke-VCFChange`，提供 `-Preview`（dry-run）與 `-Action`；**先 UAT/TEST、後 PROD**。
+- **PROD 自動加嚴**：框架對 PROD 強制 `-ForceProdChange`、變更單號 (`-ChangeTicket`)、確認備份、輸入完整環境名稱二次確認，破壞性操作另需輸入 `DESTROY`。
+- **不取代官方流程**：升級觸發後請於 SDDC Manager / VCF Operations UI 監看，遇錯依官方 KB 與 Release Notes 處置。
+- API 路徑若版本間有差異，腳本內以註解標註「以官方 API 文件為準」並附官方連結；執行前請對照目標版本 API Reference。

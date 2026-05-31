@@ -111,3 +111,62 @@ SDDC Manager (LCM + 自動化大腦)
 - VCF 5.2.4 Release Notes: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vcf-release-notes/vmware-cloud-foundation-524-release-notes.html
 - Upgrading Cloud Foundation: https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/upgrading-cloud-foundation.html
 - vLCM baseline→image 叢集轉換 (5.2.2): https://techdocs.broadcom.com/us/en/vmware-cis/vcf/vcf-5-2-and-earlier/5-2/vmware-cloud-foundation-lifecycle-management/vlcm-baseline-to-vlcm-image-cluster-transition-522-lifecycle.html
+
+## 實戰操作 (Operations)
+
+本章節提供 VCF 5.2.1 可在真實環境執行的「腳本」與「操作手冊」，全部建立在共用框架 `lib/` 之上，遵循「唯讀健檢直接查、變更一律走護欄、先測試後正式、PROD 自動加嚴」的安全原則。
+
+### 前置（共用框架 lib/）
+
+所有 PowerShell 腳本均需先載入兩個模組（腳本內已自動載入）：
+
+```powershell
+Import-Module ./lib/VCFGuardrails.psm1 -Force
+Import-Module ./lib/VCFConnect.psm1   -Force
+```
+
+- 環境定義集中於 `lib/environments.psd1`（由 `environments.example.psd1` 複製填寫），以 `-Environment <uat|test|prod>` 帶入，由 `Get-VCFEnvironment` 解析出 `.Tier/.SddcManager/.vCenter/.Nsx/.HcxManager`。
+- 憑證一律由 SecretManagement 取得（`Get-VCFCredential` / `Get-VCFRestToken`），腳本內**不寫死密碼或 IP**。
+- 變更動作一律包在 `Invoke-VCFChange` 內，提供 `-Preview`（dry-run）與 `-Action`；PROD 由框架自動要求二次確認、變更單號、備份確認。
+- REST 場景另附 Python / bash 範例，同樣遵循「先預覽、PROD 二次確認、先測試環境」。
+
+### scripts/healthcheck/（唯讀，不改動環境）
+
+| 腳本 | 用途 |
+| --- | --- |
+| `Get-Vcf521DomainHealth.ps1` | SDDC Manager REST `/v1` + PowerCLI 盤點 Management/VI Workload Domain、cluster、host、vSAN 狀態 |
+| `Get-Vcf521ServiceAndBom.ps1` | SDDC Manager 服務（SoS-style）、BOM/版本、各元件 build number 盤點 |
+| `Get-Vcf521VlcmMode.ps1` | 盤點各 cluster 的 vLCM 模式（baseline vs image），標示升 9 前需轉 image 的叢集 |
+| `Get-Vcf521CertPwdBackup.ps1` | 密碼/憑證到期、SDDC Manager 與 NSX 備份狀態盤點 |
+| `get_vcf_inventory.py` | 純 REST（Python requests）跨網域盤點，CI/排程友善 |
+
+### scripts/precheck/（升級前，唯讀為主）
+
+| 腳本 | 用途 |
+| --- | --- |
+| `Test-Vcf521UpgradePrereq.ps1` | 相容性、bundle 可用性、Depot 連線（KB 390098）、SSH 狀態（KB 86230）、baseline 叢集清單檢查 |
+| `check_depot_connectivity.sh` | bash/curl 快速驗證 Depot/Online Depot 連線與 token（KB 390098） |
+
+### scripts/change/（變更，全部走 Invoke-VCFChange 護欄）
+
+| 腳本 | 用途 |
+| --- | --- |
+| `Invoke-Vcf521BundleDownload.ps1` | 觸發 LCM bundle 下載 / 套用（升級 bundle） |
+| `Invoke-Vcf521SddcManagerUpgrade.ps1` | SDDC Manager 獨立升級（先於其他元件） |
+| `Invoke-Vcf521ApplyVsanLicense.ps1` | 套用 vSAN TiB 容量授權（License Now） |
+| `Set-Vcf521HostMaintenance.ps1` | host 進入/離開維護模式（PowerCLI） |
+
+### runbooks/
+
+| 手冊 | 內容 |
+| --- | --- |
+| `vcf-521-healthcheck-runbook.md` | 5.2.1 例行健檢（唯讀）流程、各環境注意事項、驗證 |
+| `vcf-521-upgrade-runbook.md` | 5.2 → 5.2.1 / skip-level 升級流程、precheck、回退 |
+| `vcf-521-baseline-to-image-runbook.md` | baseline→image 規劃（轉換需 5.2.2，升 9 前必轉 image） |
+
+### 安全分級提醒
+
+- **唯讀**（healthcheck / 盤點 / precheck 查詢）：可直接於任何環境執行，不改動環境。
+- **變更**（change/*）：務必先在 UAT/TEST 驗證；PROD 需 `-ForceProdChange` + `-ChangeTicket`，並通過備份與環境名稱二次確認。
+- **破壞性**：以 `-Impact Destructive` 標示，PROD 需額外輸入 `DESTROY` 確認。
+- API 路徑以官方文件為準：SDDC Manager Public API（VCF 5.2）參見 https://developer.broadcom.com/xapis/vmware-cloud-foundation-api/latest/ ；Depot 變更 KB 390098、SSH 預設關閉 KB 86230。版號/build 與相容性一律以 Broadcom TechDocs Release Notes 為準。

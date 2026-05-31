@@ -115,3 +115,48 @@ HCX 現已納入 VCF 體系（透過 VCF Operations 提供 Workload Mobility 能
 - KB 321604: https://knowledge.broadcom.com/external/article/321604
 - HCX Licensing & Packaging Overview: https://www.vmware.com/docs/vmw-hcx-licensing-and-packaging-solution-overview
 - VMware HCX 產品頁: https://www.vmware.com/products/cloud-infrastructure/hcx
+
+## 實戰操作 (Operations)
+
+本層提供可在真實環境執行的 HCX 健檢、遷移前盤點 (precheck) 與遷移變更 (change) 腳本與 runbook。所有腳本均套用 `lib/` 共用框架，**不在腳本內寫死密碼或 IP**，環境一律以 `-Environment <uat|test|prod>` 帶入，由 `Get-VCFEnvironment` 解析；PROD 由 `Invoke-VCFChange` 自動加嚴 (二次確認 / 變更單號 / 備份確認)。
+
+### 前置 (lib 框架)
+
+1. 安裝模組：`VMware.PowerCLI`、`Microsoft.PowerShell.SecretManagement` (REST 場景另需 Python `requests` 或 `curl`)。
+2. 複製 `lib/environments.example.psd1` 為 `lib/environments.psd1`，填入各環境 (含 `HcxManager`、`vCenter`、`Tier`、`CredentialName`)。
+3. 以 SecretManagement 建立憑證：`Set-Secret -Name vcf-uat -Secret (Get-Credential)`。
+4. 每次執行前匯入框架：
+   ```powershell
+   Import-Module ./lib/VCFGuardrails.psm1 -Force
+   Import-Module ./lib/VCFConnect.psm1   -Force
+   ```
+5. REST 連線一律透過 `Get-VCFRestToken -Service HCX` 取得 `x-hm-authorization` token，不自行 POST 明文密碼。
+
+> HCX REST 基底為 `https://<HcxManager>/hybridity/api`。本層腳本所用路徑以官方 API 文件為準：
+> HCX User Guide / API — https://techdocs.broadcom.com/us/en/vmware-cis/hcx/vmware-hcx/4-11.html
+> 部分非公開細項路徑於腳本註解中標註「以官方 API 文件為準」。
+
+### scripts/
+
+| 路徑 | 類型 | 說明 |
+|------|------|------|
+| `scripts/healthcheck/Get-HcxHealth.ps1` | 唯讀 | site pairing 狀態、Service Mesh 與 IX/NE appliance 健康、tunnel 狀態、Network Extension 清單、進行中遷移狀態總覽 |
+| `scripts/healthcheck/hcx_health.py` | 唯讀 | 純 REST (Python requests) 版健檢，適合無 PowerCLI 的 CI / 跳板機 |
+| `scripts/precheck/Get-HcxMigrationPrecheck.ps1` | 唯讀 | 遷移前盤點：來源 VM 清單 / 大小 / 開機狀態、目的資源、需延伸網段、依規模估算並行度 (300/600/1000) |
+| `scripts/change/New-HcxServiceMesh.ps1` | 變更 | 以 `Invoke-VCFChange` 包裝建立 Service Mesh (含 dry-run 預覽) |
+| `scripts/change/New-HcxNetworkExtension.ps1` | 變更 | 以 `Invoke-VCFChange` 包裝建立 Network Extension (L2 延伸，可選 MON) |
+| `scripts/change/Submit-HcxMigration.ps1` | 變更 (大規模) | 提交 Bulk / RAV 遷移、指定切換窗、監控、執行 cutover；PROD 嚴格護欄 |
+
+### runbooks/
+
+| 檔名 | 說明 |
+|------|------|
+| `hcx-deployment-runbook.md` | HCX 部署：site pairing → compute/network profile → service mesh → 驗證 |
+| `hcx-mass-migration-runbook.md` | 大規模遷移波次 (wave) 規劃與執行、cutover 與回退 |
+
+### 安全分級提醒
+
+- **唯讀 (healthcheck / precheck)**：直接連線查詢，**不得改動環境**，任何環境皆可執行。
+- **變更 (change)**：一律包在 `Invoke-VCFChange` 內，先 `-Preview` (dry-run) 再 `-Action`；UAT/TEST 單次確認，PROD 需 `-ForceProdChange` + `-ChangeTicket` + 備份確認 + 環境名稱二次確認。
+- **RAV / Bulk 為大規模操作**：務必先在 UAT/TEST 驗證流程，PROD 嚴守切換窗、波次分批與護欄；遷移前確認 IX/NE 頻寬 (單 IX ~1.6 Gbps、單流 ~1 Gbps) 與並行度上限 (KB 373010)。
+- **回退**：cutover 前來源 VM 維持原狀即為天然回退點；cutover 後回退需反向遷移，請見 runbook。

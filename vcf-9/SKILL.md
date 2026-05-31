@@ -91,3 +91,46 @@ VCF 9 是 Broadcom 收購 VMware 後第一個「重大架構統一」版本，�
 - VCF 9.1 公告部落格: https://blogs.vmware.com/cloud-foundation/2026/05/05/announcing-vcf-9-1-modern-private-cloud-built-for-efficiency-and-resilience/
 - VCF 9.1 Programmable Infrastructure 部落格: https://blogs.vmware.com/cloud-foundation/2026/05/25/unlocking-the-full-potential-of-programmable-infrastructure-with-vmware-cloud-foundation-9-1-new-features-and-capabilities/
 - VCF 9.1 Solution Brief: https://www.vmware.com/docs/vmware-cloud-foundation-9-1-solution-brief
+
+## 實戰操作 (Operations)
+
+本章節提供可在真實環境執行的腳本與 runbook，作為 VCF 9 知識的「動手層」。所有腳本一律套用 repo 根目錄的共用框架 `lib/`，遵循「健檢唯讀、變更走護欄、PROD 自動加嚴、先測試環境」原則。
+
+### 前置：共用框架 (lib/)
+所有 PowerShell 腳本開頭都會載入：
+```powershell
+Import-Module ./lib/VCFGuardrails.psm1 -Force   # Get-VCFEnvironment / Invoke-VCFChange
+Import-Module ./lib/VCFConnect.psm1   -Force     # Connect-VCFvCenter / Get-VCFRestToken / Get-VCFCredential / Disconnect-VCFAll
+```
+使用前須先：
+1. 由 `lib/environments.example.psd1` 複製成 `lib/environments.psd1`，填入 uat/test/prod 的 SddcManager/vCenter/Nsx/HcxManager 與 Tier。
+2. 將各環境憑證存入 SecretManagement：`Set-Secret -Name vcf-prod -Secret (Get-Credential)`（絕不寫死密碼/IP）。
+3. 環境一律以 `-Environment <uat|test|prod>` 帶入，由 `Get-VCFEnvironment` 解析；PROD 由框架自動加嚴（二次確認 / 變更單號 / 備份確認 / 強制先 dry-run）。
+- Python/bash 等非 PowerShell 腳本同樣遵循「先預覽、PROD 二次確認、先測試環境」，帳密以環境變數或 vault 注入。
+- 所有 SDDC Manager / NSX REST 路徑以官方 API 文件為準：https://developer.broadcom.com/xapis （VMware Cloud Foundation API Reference）。
+
+### 安全分級 (務必先看)
+- **ReadOnly**：唯讀健檢/盤點，可直接於 PROD 執行，不改動環境。
+- **Change**：會改動環境，包在 `Invoke-VCFChange` 內，UAT/TEST 單次確認、PROD 需 `-ForceProdChange` + `-ChangeTicket`。
+- **Destructive**：高風險變更（套用升級、decommission），PROD 另需輸入 `DESTROY` 二次確認。
+> 規則：健檢/precheck 絕不改動環境；任何變更先在 UAT/TEST 演練，PROD 必在維護視窗、備份就緒下進行。
+
+### scripts/
+| 路徑 | 分級 | 說明 |
+|------|------|------|
+| `scripts/healthcheck/Get-Vcf9Health.ps1` | ReadOnly | REST+PowerCLI 綜合健檢：SDDC/Domain/Cluster/Host 版本與狀態、vSAN 健康、NSX 叢集狀態、系統告警，可輸出 JSON |
+| `scripts/healthcheck/Get-Vcf9PasswordCertExpiry.ps1` | ReadOnly | 盤點 SDDC Manager 管理的帳密輪替時間與憑證到期，依 `-WarnDays` 標記即將到期者 |
+| `scripts/healthcheck/vcf9_fleet_inventory.py` | ReadOnly | 純 REST（Python/requests）Fleet/Domain/Cluster/Host 盤點，適合無 PowerCLI 的 Linux 跳板機；帳密走 `VCF_USER`/`VCF_PASS` 環境變數 |
+| `scripts/precheck/Invoke-Vcf9UpgradePrecheck.ps1` | ReadOnly | 升級/擴充前盤點：目前版本 vs 可用 upgradables、cluster 是否 vLCM image-based、告警清零檢查、vSAN 容量緩衝 |
+| `scripts/change/Set-Vcf9HostMaintenance.ps1` | Change | ESX host 進入/離開維護模式（PowerCLI），含 vSAN 資料疏散策略，包在 `Invoke-VCFChange` |
+| `scripts/change/Invoke-Vcf9BundleLifecycle.ps1` | Change / Destructive | 觸發 LCM bundle 下載（Change）或套用升級（Destructive）並輪詢任務狀態，僅觸發不取代官方升級程序 |
+| `scripts/change/Invoke-Vcf9HostCommission.ps1` | Change / Destructive | commission（納管，Change）/ decommission（移除，Destructive）ESX host，被納管 host 帳密由 SecretManagement 取得 |
+
+### runbooks/
+| 檔案 | 內容 |
+|------|------|
+| `runbooks/vcf9-daily-healthcheck.md` | VCF 9 日常健檢（唯讀）：前置、步驟、健康判準、各環境注意事項 |
+| `runbooks/vcf9-host-maintenance-rotation.md` | ESX host 維護模式逐台輪替：進入/離開、vSAN 疏散、驗證與回退 |
+| `runbooks/vcf9-bundle-apply.md` | LCM bundle 下載與套用四階段（precheck → 下載 → TEST 演練 → PROD 套用 → 驗證），含回退原則 |
+
+> 升級的元件順序、相容性與回退一律以 Broadcom 官方升級指南與 Bill of Materials 為準；腳本只負責安全地觸發與輪詢官方任務。

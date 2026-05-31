@@ -80,3 +80,62 @@ VCD 10.6 系列**目前最新版為修補版 10.6.1.2**，並非 10.6.1。
 - IP Spaces (Tenant Portal Guide): https://techdocs.broadcom.com/us/en/vmware-cis/cloud-director/vmware-cloud-director/10-6/map-for-vmware-cloud-director-tenant-portal-guide-10-6/working-with-networks-tenant/working-with-ip-spaces-tenant.html
 - Build numbers and installer versions (Broadcom KB): https://knowledge.broadcom.com/external/article/325479/build-numbers-and-installer-versions-of.html
 - Product Release Tracker (第三方，日期需與官方核對): https://www.virten.net/vmware/product-release-tracker/
+
+## 實戰操作 (Operations)
+
+本章節提供可在真實環境執行的 VMware Cloud Director (VCD) 腳本與 runbook，全部建構於本 repo 共用安全框架之上。
+
+### 前置：共用 lib/ 框架 (必讀)
+
+所有腳本都套用 `lib/` 框架，**不自己硬寫連線，不寫死密碼/IP**：
+
+```powershell
+Import-Module ./lib/VCFGuardrails.psm1 -Force   # Get-VCFEnvironment / Invoke-VCFChange
+Import-Module ./lib/VCFConnect.psm1   -Force    # Get-VCFCredential (走 SecretManagement)
+Import-Module ./vcd/scripts/lib/VCDApi.psm1 -Force  # VCD 專屬 REST helper (Connect-VcdApi 等)
+```
+
+- 環境一律以 `-Environment <uat|test|prod>` 帶入，由 `Get-VCFEnvironment` 解析。
+- 憑證一律由 SecretManagement 取出 (`Set-Secret -Name vcd-<env> -Secret (Get-Credential)`)，使用 Provider/System 管理員帳號。
+- **每個環境需在 `lib/environments.psd1` 新增 `Vcd` 欄位** (VCD Cell / Load Balancer FQDN) 與對應 `CredentialName`。
+- 驗證流程依官方 API：`POST /cloudapi/1.0.0/sessions/provider` (Basic, `user@System`) → 取回 `X-VMWARE-VCLOUD-ACCESS-TOKEN` → 後續 `Authorization: Bearer`。REST 路徑/schema「以官方 VMware Cloud Director OpenAPI / Programming Guide 為準」。
+
+### scripts/
+
+安全分級：`healthcheck/` 與 `precheck/` = **唯讀** (只發 GET，任何環境含 PROD 可安全執行)；`change/` = **會改動環境**，一律以 `Invoke-VCFChange` 包裝 (先 dry-run 預覽、UAT/TEST 單次確認、PROD 二次確認 + 變更單號 + 備份確認)。
+
+| 路徑 | 類型 | 說明 |
+| --- | --- | --- |
+| `scripts/lib/VCDApi.psm1` | 共用 | VCD REST helper：`Connect-VcdApi` / `Invoke-VcdApi` / `Get-VcdPagedResult` / `Disconnect-VcdApi`，銜接 lib/ 框架。 |
+| `scripts/healthcheck/Get-VcdHealth.ps1` | 唯讀 | cell 狀態、API 版本、Org/OrgVDC 清單與配額、Edge Gateway 狀態總覽 (可 `-OutputJson`)。 |
+| `scripts/healthcheck/Get-VcdCatalogSyncStatus.ps1` | 唯讀 | catalog 與 catalog item 同步/就緒狀態，標出散布卡住的內容庫。 |
+| `scripts/healthcheck/vcd_tenant_usage_report.py` | 唯讀 | Python/requests，產各 Org VDC 的 CPU/記憶體/儲存配額用量表與 CSV。憑證走環境變數，不寫死。 |
+| `scripts/precheck/Test-VcdUpgradeReadiness.ps1` | 唯讀 | 升級前盤點：cell、版本/build、API 相容、外部 PostgreSQL 13+ 提醒、人工確認清單。 |
+| `scripts/change/New-VcdOrganization.ps1` | 變更 | 建立 Organization (租戶)。 |
+| `scripts/change/New-VcdOrgVdc.ps1` | 變更 | 建立 Org VDC，含 CPU/記憶體/儲存配額與配置模型。 |
+| `scripts/change/Publish-VcdCatalog.ps1` | 變更 | catalog 對外發佈 / 分享給指定 Org。 |
+| `scripts/change/Set-VcdOrganizationState.ps1` | 變更 | 啟用/停用租戶 (停用視為 Destructive，PROD 需 `DESTROY` 確認)。 |
+
+PROD 變更範例：
+```powershell
+./vcd/scripts/change/New-VcdOrganization.ps1 -Environment prod -OrgName acme -DisplayName 'ACME Corp' `
+    -ForceProdChange -ChangeTicket CHG0012345
+```
+
+### runbooks/
+
+| 檔案 | 用途 |
+| --- | --- |
+| `runbooks/vcd-healthcheck.md` | VCD 例行唯讀健檢 (cell/Org/OrgVDC/Edge/catalog/租戶用量)。 |
+| `runbooks/vcd-tenant-onboarding.md` | 新租戶 onboarding：建 Org → OrgVDC → Edge，含驗證與回退。 |
+| `runbooks/vcd-catalog-distribution.md` | catalog 散布：對外發佈 / 分享給租戶，含驗證與回退。 |
+
+每份 runbook 皆含前置、步驟、UAT/TEST/PROD 各環境注意事項、驗證與回退。
+
+### 安全提醒
+
+- **健檢 / precheck 唯讀**：絕不改動環境，PROD 亦可安全執行；建議保存 JSON 輸出作為變更前後對照。
+- **變更先測試環境**：所有 `change/` 腳本務必先在 UAT 全流程演練，再到 TEST，最後 PROD。
+- **PROD 加嚴**：框架自動要求 `-ForceProdChange`、變更單號、備份確認、完整輸入環境名稱二次確認 (破壞性操作另需 `DESTROY`)。
+- **不外洩**：`environments.psd1` 與密碼絕不入庫；憑證只放 SecretManagement，Python 端只透過環境變數傳入且用後即清。
+- **API 正確性**：部分 OrgVDC/Edge/catalog 端點 schema 隨 API 版本而異，腳本已於註解標註「以官方 API 文件為準」，套用前請於 UAT 核對；若預設 API 版本 (38.1) 不受支援，先 `GET /api/versions` 查可用版本再以 `-ApiVersion` 指定。
