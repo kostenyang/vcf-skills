@@ -215,7 +215,7 @@ A. 限 TPM-enabled 主機；修補套用於執行中 kernel memory，VM 持續�
 A. API-first：以 OpenAPI 為單一事實來源，跨 Python/Java/PowerCLI/Terraform 達成功能對等，並新增 Prometheus 相容的 Real-Time Metrics API、VGFA 與 vCenter Server Query API。
 
 **Q7. 升級流程在哪裡查？**
-A. 升級流程（5.x→9.0、9.0→9.1）與元件升級順序請參考官方升級指南；在 Claude 環境中請改用 `vcf-upgrade` skill。
+A. 升級流程（5.x→9.0、9.0→9.1）與元件升級順序請參考官方升級指南；在 Claude 環境中請改用 `vcf-upgrade-ppt` skill。
 
 **Q8. 官方那些百分比數字可以直接寫進提案嗎？**
 A. 40% TCO、70% CPU、80% 修補等來自官方部落格/文件描述，正式專案請以官方文件與實際環境驗證後使用，勿當作承諾值。

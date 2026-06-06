@@ -28,20 +28,20 @@
 
 1. 主健檢 (cell/版本/Org/OrgVDC/Edge)：
    ```powershell
-   ./vcd/scripts/healthcheck/Get-VcdHealth.ps1 -Environment uat
+   ./vcd-ppt/scripts/healthcheck/Get-VcdHealth.ps1 -Environment uat
    # 需要存檔供比對 / 報告：
-   ./vcd/scripts/healthcheck/Get-VcdHealth.ps1 -Environment prod -OutputJson ./vcd-prod-health.json
+   ./vcd-ppt/scripts/healthcheck/Get-VcdHealth.ps1 -Environment prod -OutputJson ./vcd-prod-health.json
    ```
 2. Catalog 同步狀態：
    ```powershell
-   ./vcd/scripts/healthcheck/Get-VcdCatalogSyncStatus.ps1 -Environment uat
+   ./vcd-ppt/scripts/healthcheck/Get-VcdCatalogSyncStatus.ps1 -Environment uat
    ```
 3. 租戶資源用量報表 (Python / REST)：
    ```powershell
    $c = Get-Secret -Name vcd-uat
    $env:VCD_USER = $c.UserName
    $env:VCD_PASS = $c.GetNetworkCredential().Password
-   python3 ./vcd/scripts/healthcheck/vcd_tenant_usage_report.py --host vcd-uat.lab.local --tier UAT --csv usage-uat.csv
+   python3 ./vcd-ppt/scripts/healthcheck/vcd_tenant_usage_report.py --host vcd-uat.lab.local --tier UAT --csv usage-uat.csv
    Remove-Item Env:VCD_PASS   # 用完即清除
    ```
 

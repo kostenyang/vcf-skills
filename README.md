@@ -10,11 +10,11 @@ VMware Cloud Foundation 相關 **Claude Code Skills** 與技術文件集合。
 
 | Skill | 目錄 | 主題 |
 |-------|------|------|
-| `vcf-9` | [`vcf-9/`](vcf-9/) | VMware Cloud Foundation 9（含 9.0 與 9.1） |
-| `vcd` | [`vcd/`](vcd/) | VMware Cloud Director（多租戶雲端管理） |
-| `hcx` | [`hcx/`](hcx/) | VMware HCX（工作負載遷移與混合雲移動） |
-| `vcf-521` | [`vcf-521/`](vcf-521/) | VMware Cloud Foundation 5.2.1 |
-| `vcf-upgrade` | [`vcf-upgrade/`](vcf-upgrade/) | VCF 升級路徑（Deploy / Converge / Import / Upgrade） |
+| `vcf-9-ppt` | [`vcf-9-ppt/`](vcf-9-ppt/) | VMware Cloud Foundation 9（含 9.0 與 9.1） |
+| `vcd-ppt` | [`vcd-ppt/`](vcd-ppt/) | VMware Cloud Director（多租戶雲端管理） |
+| `hcx-ppt` | [`hcx-ppt/`](hcx-ppt/) | VMware HCX（工作負載遷移與混合雲移動） |
+| `vcf-521-ppt` | [`vcf-521-ppt/`](vcf-521-ppt/) | VMware Cloud Foundation 5.2.1 |
+| `vcf-upgrade-ppt` | [`vcf-upgrade-ppt/`](vcf-upgrade-ppt/) | VCF 升級路徑（Deploy / Converge / Import / Upgrade） |
 
 ## 目錄結構
 
@@ -31,19 +31,19 @@ vcf-skills/
 │   ├── HCX-完整指南.md
 │   ├── VCF-5.2.1-完整指南.md
 │   └── VCF-升級指南.md
-├── vcf-9/
+├── vcf-9-ppt/
 │   ├── SKILL.md
 │   └── references/{vcf-9.0.md, vcf-9.1.md}
-├── vcd/
+├── vcd-ppt/
 │   ├── SKILL.md
 │   └── references/vcd-10.6.md
-├── hcx/
+├── hcx-ppt/
 │   ├── SKILL.md
 │   └── references/hcx-migration.md
-├── vcf-521/
+├── vcf-521-ppt/
 │   ├── SKILL.md
 │   └── references/vcf-5.2.1.md
-└── vcf-upgrade/
+└── vcf-upgrade-ppt/
     ├── SKILL.md
     └── references/upgrade-5.2-to-9.0.md
 ```
@@ -70,10 +70,10 @@ vcf-skills/
 
 ```bash
 # 個人層級 (所有專案可用)
-cp -r vcf-9 vcd hcx vcf-521 vcf-upgrade ~/.claude/skills/
+cp -r vcf-9-ppt vcd-ppt hcx-ppt vcf-521-ppt vcf-upgrade-ppt ~/.claude/skills/
 
 # 或專案層級
-cp -r vcf-9 vcd hcx vcf-521 vcf-upgrade .claude/skills/
+cp -r vcf-9-ppt vcd-ppt hcx-ppt vcf-521-ppt vcf-upgrade-ppt .claude/skills/
 ```
 
 每個 `SKILL.md` 都含 YAML frontmatter（`name` + `description`），
@@ -81,11 +81,11 @@ Claude 會依 `description` 自動判斷何時觸發該 skill。
 
 ## Skill 之間的關係
 
-- 問 **VCF 9 架構/新功能** → `vcf-9`
-- 問 **VCF 5.2.1 維運/功能** → `vcf-521`
-- 問 **升級流程（5.2→9.0、9.0→9.1、Converge/Import）** → `vcf-upgrade`
-- 問 **多租戶雲（VCSP）** → `vcd`
-- 問 **遷移 / 上雲 / L2 延伸** → `hcx`
+- 問 **VCF 9 架構/新功能** → `vcf-9-ppt`
+- 問 **VCF 5.2.1 維運/功能** → `vcf-521-ppt`
+- 問 **升級流程（5.2→9.0、9.0→9.1、Converge/Import）** → `vcf-upgrade-ppt`
+- 問 **多租戶雲（VCSP）** → `vcd-ppt`
+- 問 **遷移 / 上雲 / L2 延伸** → `hcx-ppt`
 
 ## 實戰操作 (Operations) — 在真實環境執行
 
@@ -114,9 +114,9 @@ cp lib/environments.example.psd1 lib/environments.psd1   # 填入你的 uat/test
 Set-Secret -Name vcf-prod -Secret (Get-Credential)        # 存憑證 (不落地明文)
 
 # 唯讀健檢
-./vcf-9/scripts/healthcheck/Get-Vcf9Health.ps1 -Environment prod
+./vcf-9-ppt/scripts/healthcheck/Get-Vcf9Health.ps1 -Environment prod
 # 變更 (走護欄)
-./vcf-9/scripts/change/Set-Vcf9HostMaintenance.ps1 -Environment uat
+./vcf-9-ppt/scripts/change/Set-Vcf9HostMaintenance.ps1 -Environment uat
 ```
 
 > `environments.psd1`（含真實主機名/帳密對應）已被 `.gitignore` 排除，不會上傳。

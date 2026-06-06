@@ -1,7 +1,7 @@
 ---
-name: vcf-9
+name: vcf-9-ppt
 description: |
-  VMware Cloud Foundation 9 (9.0 與 9.1) 專門知識 skill。涵蓋 VCF 9 統一私有雲架構 (Organizational Private Cloud → VCF Fleet → VCF Instance → VCF Domains → vSphere Clusters)、VCF Operations 統一營運平面、VCF Automation 自助服務、Fleet Management、VCF Identity Broker、VCF Installer / SDDC Manager、API-first / OpenAPI 單一事實來源與跨語言 SDK (Python/Java/PowerCLI 9.1/Terraform v2.16.0)、vSphere 9 / ESX 9 / vSAN 9 / NSX 9、VKS (Kubernetes)、各版本 BOM 與 build 號、以及 9.0/9.0.1/9.0.2/9.1 的版本差異與新功能 (Enhanced NVMe Memory Tiering、ESX Live Patching、vSphere Elastic Provisioning、Real-Time Metrics API、Advanced Cyber Compliance、勒索復原)。當使用者詢問 VCF 9、VCF 9.0、VCF 9.1、VCF 9.0.1/9.0.2、vSphere Foundation 9、private cloud / 私有雲架構、VCF 9 部署/規劃/設計/POC、元件版本/BOM/build 號、Fleet/Instance/Domain 階層、或任何 9.x 技術細節與版本比較時觸發。也適用於 VCF 9 簡報、架構設計、版本差異查詢等需求。升級流程 (5.x→9.0、9.0→9.1) 請改用 vcf-upgrade skill。
+  VMware Cloud Foundation 9 (9.0 與 9.1) 專門知識 skill。涵蓋 VCF 9 統一私有雲架構 (Organizational Private Cloud → VCF Fleet → VCF Instance → VCF Domains → vSphere Clusters)、VCF Operations 統一營運平面、VCF Automation 自助服務、Fleet Management、VCF Identity Broker、VCF Installer / SDDC Manager、API-first / OpenAPI 單一事實來源與跨語言 SDK (Python/Java/PowerCLI 9.1/Terraform v2.16.0)、vSphere 9 / ESX 9 / vSAN 9 / NSX 9、VKS (Kubernetes)、各版本 BOM 與 build 號、以及 9.0/9.0.1/9.0.2/9.1 的版本差異與新功能 (Enhanced NVMe Memory Tiering、ESX Live Patching、vSphere Elastic Provisioning、Real-Time Metrics API、Advanced Cyber Compliance、勒索復原)。當使用者詢問 VCF 9、VCF 9.0、VCF 9.1、VCF 9.0.1/9.0.2、vSphere Foundation 9、private cloud / 私有雲架構、VCF 9 部署/規劃/設計/POC、元件版本/BOM/build 號、Fleet/Instance/Domain 階層、或任何 9.x 技術細節與版本比較時觸發。也適用於 VCF 9 簡報、架構設計、版本差異查詢等需求。升級流程 (5.x→9.0、9.0→9.1) 請改用 vcf-upgrade-ppt skill。
 ---
 
 # VMware Cloud Foundation 9 (9.0 / 9.1)
@@ -18,7 +18,7 @@ VCF 9 是 Broadcom 收購 VMware 後第一個「重大架構統一」版本，�
 - VCF 9 部署 (Deploy)、轉換 (Converge)、匯入 (Import) 工作流程
 - 撰寫 VCF 9 簡報、POC 計畫、技術文件、版本差異說明
 
-> 升級流程 (5.x → 9.0、9.0 → 9.1) 請改用 `vcf-upgrade` skill；製作簡報請改用對應的 `vcf-91-ppt` 等 PPT skill。
+> 升級流程 (5.x → 9.0、9.0 → 9.1) 請改用 `vcf-upgrade-ppt` skill；製作簡報請改用對應的 `vcf-91-ppt` 等 PPT skill。
 
 ## VCF 9 核心架構重點
 
@@ -69,7 +69,7 @@ VCF 9 是 Broadcom 收購 VMware 後第一個「重大架構統一」版本，�
 
 ## 與其他 skill 的關係
 
-- **`vcf-upgrade`**：5.x → 9.0、9.0 → 9.1 升級流程、前置條件與元件升級順序。
+- **`vcf-upgrade-ppt`**：5.x → 9.0、9.0 → 9.1 升級流程、前置條件與元件升級順序。
 - **`vcf-91-ppt` / `vcf-ai` / `vcf-financial` 等 PPT skill**：以官方 Broadcom 範本製作 VCF 簡報。本 skill 負責提供技術內容與版本事實。
 - 本 skill 專注於 **VCF 9 架構知識與版本事實**，是上述 skill 的技術後盾。
 

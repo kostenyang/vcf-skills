@@ -123,7 +123,7 @@ vSphere 環境/拓樸範圍：新增 shared VDS、LACP，以及 vLCM image 與 b
 - [ ] vCenter / NSX 版本符合 9.x Converge/Import 最低需求
 - [ ] 確認硬體在 VCF 9 相容性清單
 
-（完整跨大版本升級流程請參考 VCF 升級專屬文件 / `vcf-upgrade` skill。）
+（完整跨大版本升級流程請參考 VCF 升級專屬文件 / `vcf-upgrade-ppt` skill。）
 
 ## 8. 重要營運注意事項
 

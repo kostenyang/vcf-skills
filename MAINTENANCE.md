@@ -27,7 +27,7 @@ VCF / VCD / HCX 版本更新很快，這份文件說明「這些 skill 與技術
 2. 重大改版可在檔名加版號保留歷史，例如：
    - `references/vcf-9.1.md` → 出 9.2 時新增 `references/vcf-9.2.md`（**保留** 9.1）。
    - 永遠不刪舊檔，只新增 + 在 README/CHANGELOG 標示最新。
-3. Skill 目錄本身維持穩定名稱（`vcf-9`、`vcd`…），避免破壞已安裝的觸發。
+3. Skill 目錄本身維持穩定名稱（`vcf-9-ppt`、`vcd-ppt`…），避免破壞已安裝的觸發。
 
 ---
 

@@ -20,12 +20,12 @@
 
 1. 建立 Organization：
    ```powershell
-   ./vcd/scripts/change/New-VcdOrganization.ps1 -Environment uat `
+   ./vcd-ppt/scripts/change/New-VcdOrganization.ps1 -Environment uat `
        -OrgName acme -DisplayName 'ACME Corp' -Description '新客戶 ACME'
    ```
 2. 建立 Org VDC (含配額)：
    ```powershell
-   ./vcd/scripts/change/New-VcdOrgVdc.ps1 -Environment uat `
+   ./vcd-ppt/scripts/change/New-VcdOrgVdc.ps1 -Environment uat `
        -OrgName acme -VdcName acme-vdc01 -ProviderVdc PVDC-Gold `
        -AllocationModel AllocationPool `
        -CpuLimitMhz 20000 -MemoryLimitMb 65536 `
@@ -43,7 +43,7 @@
      ```powershell
      Import-Module ./lib/VCFGuardrails.psm1 -Force
      Import-Module ./lib/VCFConnect.psm1   -Force
-     Import-Module ./vcd/scripts/lib/VCDApi.psm1 -Force
+     Import-Module ./vcd-ppt/scripts/lib/VCDApi.psm1 -Force
      $env  = Get-VCFEnvironment -Name uat
      $conn = Connect-VcdApi -Environment $env
      $body = @{ name='acme-edge01'; orgVdc=@{ name='acme-vdc01' } # ... uplinks 依官方 schema 補齊
@@ -65,7 +65,7 @@
 ## 4. 驗證
 
 ```powershell
-./vcd/scripts/healthcheck/Get-VcdHealth.ps1 -Environment uat
+./vcd-ppt/scripts/healthcheck/Get-VcdHealth.ps1 -Environment uat
 ```
 - 新 Org 出現於清單且 `isEnabled=true`。
 - 新 OrgVDC 出現、配置模型/配額正確、`isEnabled=true`。

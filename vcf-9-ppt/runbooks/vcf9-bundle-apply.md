@@ -20,25 +20,25 @@
 ## 步驟
 ### 階段 1 — Precheck (唯讀)
 ```powershell
-./vcf-9/scripts/precheck/Invoke-Vcf9UpgradePrecheck.ps1 -Environment <env> -TargetVersion '9.1.0.0'
+./vcf-9-ppt/scripts/precheck/Invoke-Vcf9UpgradePrecheck.ps1 -Environment <env> -TargetVersion '9.1.0.0'
 ```
 確認：可用 upgradable 含目標版本、所有 cluster 為 vLCM image-based、無 CRITICAL/WARNING 告警、vSAN 容量有緩衝。
 
 ### 階段 2 — 下載 Bundle (Change)
 取得目標 `bundleId` (由 precheck/`/v1/bundles` 或 SDDC Manager UI)，然後：
 ```powershell
-./vcf-9/scripts/change/Invoke-Vcf9BundleLifecycle.ps1 -Environment <env> -Mode Download -BundleId <bundleId>
+./vcf-9-ppt/scripts/change/Invoke-Vcf9BundleLifecycle.ps1 -Environment <env> -Mode Download -BundleId <bundleId>
 ```
 腳本會觸發下載並輪詢至 COMPLETED。
 
 ### 階段 3 — 套用 (Destructive，先 TEST 後 PROD)
 ```powershell
 # 先在 TEST 演練
-./vcf-9/scripts/change/Invoke-Vcf9BundleLifecycle.ps1 -Environment test -Mode Apply `
+./vcf-9-ppt/scripts/change/Invoke-Vcf9BundleLifecycle.ps1 -Environment test -Mode Apply `
    -BundleId <bundleId> -ResourceType DOMAIN -ResourceId <domainId>
 
 # PROD (維護視窗內)
-./vcf-9/scripts/change/Invoke-Vcf9BundleLifecycle.ps1 -Environment prod -Mode Apply `
+./vcf-9-ppt/scripts/change/Invoke-Vcf9BundleLifecycle.ps1 -Environment prod -Mode Apply `
    -BundleId <bundleId> -ResourceType DOMAIN -ResourceId <domainId> `
    -ForceProdChange -ChangeTicket CHG0012345
 ```
@@ -46,7 +46,7 @@
 
 ### 階段 4 — 套用後驗證
 ```powershell
-./vcf-9/scripts/healthcheck/Get-Vcf9Health.ps1 -Environment <env>
+./vcf-9-ppt/scripts/healthcheck/Get-Vcf9Health.ps1 -Environment <env>
 ```
 
 ## 驗證

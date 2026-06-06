@@ -21,11 +21,11 @@
 1. 進入 repo 根目錄。
 2. 執行綜合健檢 (以 prod 為例)：
    ```powershell
-   ./vcf-9/scripts/healthcheck/Get-Vcf9Health.ps1 -Environment prod -OutputJson ./health-prod.json
+   ./vcf-9-ppt/scripts/healthcheck/Get-Vcf9Health.ps1 -Environment prod -OutputJson ./health-prod.json
    ```
 3. 執行密碼/憑證到期檢查：
    ```powershell
-   ./vcf-9/scripts/healthcheck/Get-Vcf9PasswordCertExpiry.ps1 -Environment prod -WarnDays 45
+   ./vcf-9-ppt/scripts/healthcheck/Get-Vcf9PasswordCertExpiry.ps1 -Environment prod -WarnDays 45
    ```
 4. (無 PowerCLI 環境，純 REST 盤點)：
    ```bash

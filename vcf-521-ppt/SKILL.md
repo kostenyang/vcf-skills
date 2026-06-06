@@ -1,5 +1,5 @@
 ---
-name: vcf-521
+name: vcf-521-ppt
 description: |
   VMware Cloud Foundation 5.2.1 專門知識 skill。涵蓋 VCF 5.2.1 的 BOM 元件版本 (SDDC Manager / vCenter 8.0 U3c / ESXi 8.0 U3b / NSX 4.2.1 / vSAN Witness 8.0 U3 / Aria Suite Lifecycle 8.18)、新功能 (vCenter Reduced Downtime Upgrade RDU、NSX in-place 升級、vLCM baseline 與 image 同域混用、vSAN TiB 容量授權 License Now、Private AI Foundation 與 DSM 整合、憑證/密碼管理整合進 vSphere Client、VPC/CCI 自助服務、VCF Import Tool)、循序與跳版 (skip-level) 升級路徑 (從 VCF 4.5+)、以及維運注意事項 (Depot 驗證變更 KB 390098、SSH 預設關閉 KB 86230、棄用事項)。當使用者詢問 VCF 5.2.1、VCF 5.2、SDDC Manager 5.2、Workload Domain 設計、vLCM baseline vs image、baseline→image 轉換 (5.2.2)、VCF 5.2.x BOM/build number、5.2.x 維運/升級規劃、或作為升級到 VCF 9.x 的來源版本盤點時觸發。也適用於 VCF 5.2.1 簡報、POC、相容性比對需求。注意：5.2.1 屬「VCF 5.2 and earlier」分支，與新一代 VCF 9.x 為不同產品線；常作為升級到 9.x 的來源版本。
 ---
@@ -25,7 +25,7 @@ GA 2024-10-09，Build 24307856），採傳統 SDDC Manager + Workload Domain 架
 - 作為升級到 VCF 9.x 的「來源版本」盤點
 - Depot 下載失敗、SSH 預設關閉等維運疑難排解
 
-> 5.2.x → 9.x 的跨大版本升級流程請用 `vcf-upgrade` skill；VCF 9 架構用 `vcf-9` skill；
+> 5.2.x → 9.x 的跨大版本升級流程請用 `vcf-upgrade-ppt` skill；VCF 9 架構用 `vcf-9-ppt` skill；
 > 製作簡報用對應的 `vcf-*-ppt` / 產業 skill。
 
 ## 核心重點
@@ -85,8 +85,8 @@ SDDC Manager (LCM + 自動化大腦)
 
 ## 與其他 skill 的關係
 
-- **`vcf-upgrade`**：5.2.x → 9.x 的跨大版本升級流程與前置盤點。
-- **`vcf-9`**：VCF 9.0 / 9.1 統一架構與新功能（升級目的地）。
+- **`vcf-upgrade-ppt`**：5.2.x → 9.x 的跨大版本升級流程與前置盤點。
+- **`vcf-9-ppt`**：VCF 9.0 / 9.1 統一架構與新功能（升級目的地）。
 - **產業 / 簡報 skill**（`vcf-91-ppt`、`vcf-financial`、`vcf-telecom`、`vcf-semiconductor`、
   `vcf-hybrid-cloud`、`vcf-ai`）：需要做 VCF 簡報時改用對應 skill，並以官方範本製作。
 

@@ -1,5 +1,5 @@
 ---
-name: vcf-upgrade
+name: vcf-upgrade-ppt
 description: |
   涵蓋 VMware Cloud Foundation (VCF) 升級與導入的四種路徑：Deploy (全新/Greenfield)、Converge (既有 vSphere 收斂為 VVF/VCF)、Import (既有 vCenter 匯入為 Workload Domain)、Upgrade (VCF 5.x → 9.0.x/9.1)。提供升級順序、先決條件、版本需求、prechecks、備份/rollback 策略與已知問題。觸發關鍵字與情境：VCF 升級、VCF upgrade、VCF 9.0/9.1、5.2 to 9.0、5.2.x→9.1、vSphere 收斂、converge VVF、vCenter 匯入 import、workload domain、vLCM image 轉換、ELM 停用、vIDM/vIDB/Identity Broker、VCF Operations 強制元件、VCF Installer、VCF Management Services、License Server、Upgrade Planning Tool、skip-level upgrade、precheck、SDDC Manager、NSX/ESX/vCenter 升級序列、vSAN OSA、principal storage (vSAN/FC/NFS)、Aria Lifecycle/Fleet Management、VCD 不支援。當使用者詢問 VCF 升級規劃、相容性、版本最低需求、收斂/匯入流程、升級風險與回復時使用。
 ---
@@ -8,7 +8,7 @@ description: |
 
 VCF 升級與導入的技術知識庫，涵蓋 Deploy / Converge / Import / Upgrade 四種路徑，
 以及 VCF 5.x → 9.0.x / 9.1 的升級順序、先決條件與風險。產品版本細節搭配
-`vcf-9`、`vcf-521` skill。
+`vcf-9-ppt`、`vcf-521-ppt` skill。
 
 ## 使用時機
 

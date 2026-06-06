@@ -17,22 +17,22 @@
 
 1. (唯讀) 先確認 catalog 同步狀態：
    ```powershell
-   ./vcd/scripts/healthcheck/Get-VcdCatalogSyncStatus.ps1 -Environment uat
+   ./vcd-ppt/scripts/healthcheck/Get-VcdCatalogSyncStatus.ps1 -Environment uat
    ```
    確認目標 catalog 的 items 皆就緒，無「非就緒項目」警告。
 2. 對外發佈：
    ```powershell
-   ./vcd/scripts/change/Publish-VcdCatalog.ps1 -Environment uat `
+   ./vcd-ppt/scripts/change/Publish-VcdCatalog.ps1 -Environment uat `
        -CatalogName base-templates -Mode PublishExternal
    ```
 3. 分享給指定租戶 (唯讀權限)：
    ```powershell
-   ./vcd/scripts/change/Publish-VcdCatalog.ps1 -Environment uat `
+   ./vcd-ppt/scripts/change/Publish-VcdCatalog.ps1 -Environment uat `
        -CatalogName base-templates -Mode ShareToOrg -TargetOrg acme
    ```
 4. PROD 範例 (需單號與提權)：
    ```powershell
-   ./vcd/scripts/change/Publish-VcdCatalog.ps1 -Environment prod `
+   ./vcd-ppt/scripts/change/Publish-VcdCatalog.ps1 -Environment prod `
        -CatalogName base-templates -Mode ShareToOrg -TargetOrg acme `
        -ForceProdChange -ChangeTicket CHG0012347
    ```

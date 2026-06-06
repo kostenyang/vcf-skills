@@ -100,7 +100,7 @@ SDDC Manager (生命週期 + 自動化大腦)
 - [ ] vCenter / NSX 版本符合 9.x Converge/Import 最低需求
 - [ ] 確認硬體在 VCF 9 相容性清單
 
-（完整升級流程見 `vcf-upgrade` skill。）
+（完整升級流程見 `vcf-upgrade-ppt` skill。）
 
 ## 7. 重要營運注意事項
 

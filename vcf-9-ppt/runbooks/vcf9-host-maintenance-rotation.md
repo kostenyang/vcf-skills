@@ -11,7 +11,7 @@
 1. 完成 `lib/` 設定與 SecretManagement 憑證 (見日常健檢 runbook 前置)。
 2. 先跑健檢確認叢集為 green、vSAN 容量有足夠 slack、HA/DRS 正常：
    ```powershell
-   ./vcf-9/scripts/healthcheck/Get-Vcf9Health.ps1 -Environment <env>
+   ./vcf-9-ppt/scripts/healthcheck/Get-Vcf9Health.ps1 -Environment <env>
    ```
 3. 確認叢集可容忍少一台 host (FTT 與容量)；一次只輪替一台。
 4. PROD：已開立變更單號、已通知、已在維護視窗。
@@ -20,18 +20,18 @@
 1. **進入維護模式**：
    - UAT/TEST：
      ```powershell
-     ./vcf-9/scripts/change/Set-Vcf9HostMaintenance.ps1 -Environment test -VMHostName esx01.corp.local -Action Enter
+     ./vcf-9-ppt/scripts/change/Set-Vcf9HostMaintenance.ps1 -Environment test -VMHostName esx01.corp.local -Action Enter
      ```
    - PROD：
      ```powershell
-     ./vcf-9/scripts/change/Set-Vcf9HostMaintenance.ps1 -Environment prod -VMHostName esx01.corp.local `
+     ./vcf-9-ppt/scripts/change/Set-Vcf9HostMaintenance.ps1 -Environment prod -VMHostName esx01.corp.local `
         -Action Enter -ForceProdChange -ChangeTicket CHG0012345
      ```
    - 預設 vSAN 疏散策略 `EnsureAccessibility`；若要清空該 host 上所有 vSAN 元件改用 `-VsanDataMigration Full`。
 2. 確認腳本回報狀態為 `Maintenance` 後，執行硬體/韌體維護工作。
 3. **離開維護模式**：
    ```powershell
-   ./vcf-9/scripts/change/Set-Vcf9HostMaintenance.ps1 -Environment <env> -VMHostName esx01.corp.local -Action Exit [-ForceProdChange -ChangeTicket ...]
+   ./vcf-9-ppt/scripts/change/Set-Vcf9HostMaintenance.ps1 -Environment <env> -VMHostName esx01.corp.local -Action Exit [-ForceProdChange -ChangeTicket ...]
    ```
 4. 跑健檢確認該 host 回到 Connected、vSAN 重新同步完成 (resync = 0) 後，再處理下一台。
 

@@ -1,7 +1,7 @@
 # Runbook：VCF 5.2.1 例行健檢 (唯讀)
 
 > 目的：定期 / 升級前確認 VCF 5.2.1 環境健康。全程**唯讀**，不改動環境。
-> 適用 skill：`vcf-521`。相關腳本位於 `scripts/healthcheck/`。
+> 適用 skill：`vcf-521-ppt`。相關腳本位於 `scripts/healthcheck/`。
 
 ## 1. 前置
 

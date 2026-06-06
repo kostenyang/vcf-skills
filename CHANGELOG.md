@@ -2,6 +2,15 @@
 
 依日期記錄 skill 與技術文件的變動。版本與相容性以 Broadcom 官方文件為準。
 
+## 2026-06-06 — skill 改名加 -ppt 後綴
+
+- 5 個 skill 全部改名加 `-ppt` 後綴，讓「做簡報用」的 skill 一眼可辨：
+  - `vcf-9` → `vcf-9-ppt`、`vcf-521` → `vcf-521-ppt`、`vcf-upgrade` → `vcf-upgrade-ppt`、
+    `vcd` → `vcd-ppt`、`hcx` → `hcx-ppt`（以 `git mv` 改名，保留歷史）。
+- 同步更新：各 `SKILL.md` 的 `name:` 欄位與彼此交叉引用、README（表格/目錄樹/安裝指令/關係）、
+  `docs/` 與 `MAINTENANCE.md` 內的 skill 引用、runbook 與 SKILL 範例中的 `./<skill>/` 執行路徑。
+- `lib/`（共用框架，非 skill）維持原名。
+
 ## 2026-05-31 — 實戰操作層（v3）
 
 - 將 skill 從「知識型」升級為「實戰操作型」，可在真實環境執行。

@@ -1,5 +1,5 @@
 ---
-name: vcd
+name: vcd-ppt
 description: |
   VMware Cloud Director (VCD) 專門知識 skill。涵蓋多租戶雲端交付平台架構、Provider/Tenant 模型、Organization、Organization VDC (OrgVDC)、Provider VDC (PVDC)、Edge Gateway、NSX 整合、Catalog/Template、三層租戶 (Three-Tier / Multi-Tier Tenancy: Provider → Sub-Provider → Managed Org)、IP Spaces、Container Service Extension (CSE)、Kubernetes 租戶/namespace 細粒度授權、Guest OS-Aware VM Placement、API Token 治理、計費與資源配額，以及 VCD 作為 VMware Cloud Foundation (VCF) 方案一部分的交付模式。當使用者詢問 VCD、Cloud Director、vCloud Director、雲服務商 (VCSP / Cloud Service Provider) 多租戶平台、租戶/組織設計、OrgVDC 規劃、IP Spaces、Edge Gateway/NSX 防火牆、VCD 版本 (10.6 / 10.6.1 / 10.6.1.2)、版本與 build 號、新功能/What's New、升級評估，或 VCD 相關架構、部署、維運、簡報、提案時觸發。技術名詞與版本一律以 Broadcom TechDocs 官方 Release Notes 為準。
 ---
@@ -59,8 +59,8 @@ VCD 10.6 系列**目前最新版為修補版 10.6.1.2**，並非 10.6.1。
 
 - VCD 疊在 vSphere + NSX 之上；在 VCF 環境中由 VCF 提供底層 SDDC，VCD 提供多租戶交付層。VCD 本身現亦以 VCF 方案的一部分交付。
 - 網路服務 (Edge Gateway、segment、防火牆、LB) 由 NSX / Avi 提供，VCD 做租戶層抽象與自助。
-- 撰寫電信 / VCSP 簡報時，搭配 `vcf-telecom` skill；底層 VCF 升級規劃搭配 `vcf-upgrade`、`vcf-9`、`vcf-521`。
-- 災難復原 / 跨站延伸搭配 `hcx`。
+- 撰寫電信 / VCSP 簡報時，搭配 `vcf-telecom` skill；底層 VCF 升級規劃搭配 `vcf-upgrade-ppt`、`vcf-9-ppt`、`vcf-521-ppt`。
+- 災難復原 / 跨站延伸搭配 `hcx-ppt`。
 
 ## 重要提醒
 
@@ -92,7 +92,7 @@ VCD 10.6 系列**目前最新版為修補版 10.6.1.2**，並非 10.6.1。
 ```powershell
 Import-Module ./lib/VCFGuardrails.psm1 -Force   # Get-VCFEnvironment / Invoke-VCFChange
 Import-Module ./lib/VCFConnect.psm1   -Force    # Get-VCFCredential (走 SecretManagement)
-Import-Module ./vcd/scripts/lib/VCDApi.psm1 -Force  # VCD 專屬 REST helper (Connect-VcdApi 等)
+Import-Module ./vcd-ppt/scripts/lib/VCDApi.psm1 -Force  # VCD 專屬 REST helper (Connect-VcdApi 等)
 ```
 
 - 環境一律以 `-Environment <uat|test|prod>` 帶入，由 `Get-VCFEnvironment` 解析。
@@ -118,7 +118,7 @@ Import-Module ./vcd/scripts/lib/VCDApi.psm1 -Force  # VCD 專屬 REST helper (Co
 
 PROD 變更範例：
 ```powershell
-./vcd/scripts/change/New-VcdOrganization.ps1 -Environment prod -OrgName acme -DisplayName 'ACME Corp' `
+./vcd-ppt/scripts/change/New-VcdOrganization.ps1 -Environment prod -OrgName acme -DisplayName 'ACME Corp' `
     -ForceProdChange -ChangeTicket CHG0012345
 ```
 

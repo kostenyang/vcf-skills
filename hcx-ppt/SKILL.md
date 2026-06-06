@@ -1,5 +1,5 @@
 ---
-name: hcx
+name: hcx-ppt
 description: |
   VMware HCX 應用遷移與工作負載移動平台專門知識。涵蓋 Service Mesh、Interconnect (IX)、Network Extension (NE / L2 延伸)、Mobility Optimized Networking (MON) 與其 Route Policy、五種遷移類型 (HCX vMotion、Cold、Bulk Migration、RAV / Replication Assisted vMotion、OSAM / OS-Assisted Migration with Sentinel)、RAV/Bulk 並行擴充規模 (300/600/1000)、HCX Advanced vs Enterprise 授權與 VCF Solution Licensing 自動繼承、最新版本 4.11.x 與 EOS/升級路徑，以及與 VCF / VMC on AWS / GCVE / AVS 的遷移整合。當使用者詢問 HCX、跨站遷移、資料中心搬遷、機房整併、上雲遷移、大規模 VM 搬遷、零停機 / 低停機遷移、L2 網路延伸、RAV、MON、Sentinel / OSAM、KVM / Hyper-V 遷移、HCX 授權、HCX 版本升級、HCX 設計規劃 / runbook / 簡報時觸發。注意 WAN Optimization 已於 4.11.4 移除，請勿列為現行功能。
 ---
