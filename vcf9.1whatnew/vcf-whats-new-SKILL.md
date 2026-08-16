@@ -102,6 +102,17 @@ done | sort -t'|' -k2
 
 > Icon 圓圈固定循環 4 色：**Green → Sky Blue → Plum → Teal**（左到右），維持 Broadcom Tech Tuesday 一致觀感。
 
+### ⚠️ 配色不要單調 — 每章換一個 accent
+
+**細色條、section divider、icon 圈的顏色跟著「章」走，不是全 deck 固定一色。**
+四個 pillar 就配四個 accent（建議 Teal → Sky Blue → Plum → Green），整份至少四種主色。
+
+架構圖裡的元件用 `vcf-base` 的 **extended palette** 分類（`#78BE20` 綠 / `#0091A0` 青 / `#0095D3` 藍 /
+`#A68CC2` 薰衣草 / `#E68C28` 橘 / `#A6192E` 緋紅…），每頁 3–5 個彩色，同一種元件跨頁用同一色。
+橘=變更中、紅=風險/不支援、綠=新增，語意色不要拿來當分類色。
+
+> 完整規則（三層色彩結構、extended palette 全表、禁忌）見 `vcf-base` 的「配色運用」段。
+
 ---
 
 ## Signature Layouts
@@ -181,7 +192,7 @@ done | sort -t'|' -k2
 幾何（EMU，照抄不要自己調）：
 - Subtitle：off (592866, 811830) ext (10962687, 247743)，sz 16–20pt
 - 左圖區：off (608012, 1600201) ext (7398303, 4572000)
-- 右欄細色條：off (8380072, 1589923) ext (3808754, 82618)，填色 `accent2`
+- 右欄細色條：off (8380072, 1589923) ext (3808754, 82618)，填色 = **該章的 accent**（範本預設 `accent2`，逐章換色）
 - 右欄文字：off (8380413, 1600200) ext (3808412, 4572000)，sz 11–16pt
 
 規則：
