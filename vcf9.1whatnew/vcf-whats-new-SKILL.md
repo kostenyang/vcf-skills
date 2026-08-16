@@ -338,9 +338,49 @@ done | sort -t'|' -k2
 
 ---
 
-## Token / 成本最佳化（沿用既有規則）
+## 產出流程 — 照官方美術版，又不燒 token
+
+**核心原則：美術留在檔案裡，只讓文字進 context。**
+一張官方內容頁的 XML 約 293,000 字元，純文字只有約 950 字元 —— 差 310 倍。
+所以**複製整頁換字**，絕不用 python-pptx 從空白頁「照著色票規格重畫」（又貴又不像）。
+
+### 標準四步
+
+```bash
+S=scripts/clone-slide.py
+
+# 1. 先看範本有什麼（354 字元，取代讀 293K 的 XML）
+python3 $S list TECH_TUESDAY_Whats_New_with_vSAN_in_VCF_9_1.pptx
+python3 $S list ...pptx --slide 6          # 單頁的可填欄位
+
+# 2. 砍到只剩要的骨架（順序照給的順序）
+python3 $S keep ...pptx --slides 1,2,3,4,5 --out deck.pptx
+
+# 3. 每張 feature 頁：複製一張「圖已經對」的頁，換文字
+python3 $S clone deck.pptx --slide 5 --out deck.pptx \
+  --title "客戶得到什麼好處" \
+  --subtitle "功能名 / 一句技術描述" \
+  --bullets "重點一|重點二|1:次階重點"
+
+# 4. QA 看圖不看 XML
+soffice --headless --convert-to pdf --outdir qa deck.pptx
+pdftoppm -png -r 70 -f 4 -l 6 qa/deck.pdf qa/slide
+```
+
+### 配套檔
+
+| 檔案 | 用途 |
+|------|------|
+| `references/layout-map.md` | 兩份範本全部版型的「名稱 → 檔案 → master → 幾何」對照，省掉開檔掃 100+ 個 layout |
+| `scripts/clone-slide.py` | `list` / `clone` / `settext` / `keep` |
+| `scripts/gen-layout-map.py` | 範本換版時重產上面那張表 |
+
+### 其他既有規則
 
 - **內容草稿與檔案生成分開**：先在對話確認所有 feature 頁文字，再一次生成 .pptx。
 - 大型 deck（>20 頁）分多個對話產出，避免單次 token 爆量。
 - **Front-load 需求**：一開始就講清楚要哪些 section、哪些 feature、要不要 DEMO 頁、對內或對外版本。
 - 模板型 deck 用標準 chat + `vcf-*` skill，**不要用 Cowork**。
+- **挑對頁再複製**：`clone` 不會改圖，所以要選一張示意圖本來就對的頁；
+  拿壓縮示意圖的頁去講授權，文字對了圖也是錯的。
+- `--bullets` **不吃 markdown**，`**粗體**` 會原樣印出星號。
