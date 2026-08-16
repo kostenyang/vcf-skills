@@ -8,11 +8,11 @@ TMP=$(mktemp -d)
 echo ">> clone $REPO"
 git clone --depth 1 -b "$BRANCH" "$REPO" "$TMP"
 echo ">> copy skill"
-mkdir -p "$TMP/vcf-whats-new"
-cp -f vcf-whats-new/SKILL.md "$TMP/vcf-whats-new/"
-cp -f vcf-whats-new/TECH_TUESDAY_Whats_New_with_vSphere_in_VCF_9_1.pptx "$TMP/vcf-whats-new/"
+mkdir -p "$TMP/skills/vcf-whats-new"
+cp -f vcf-whats-new/SKILL.md "$TMP/skills/vcf-whats-new/"
+cp -f vcf-whats-new/TECH_TUESDAY_Whats_New_with_vSphere_in_VCF_9_1.pptx "$TMP/"
 cd "$TMP"
-git add vcf-whats-new/SKILL.md vcf-whats-new/TECH_TUESDAY_Whats_New_with_vSphere_in_VCF_9_1.pptx
+git add skills/vcf-whats-new/SKILL.md TECH_TUESDAY_Whats_New_with_vSphere_in_VCF_9_1.pptx
 git commit -m "Add vcf-whats-new skill (VCF 9 Tech Tuesday What's New template)"
 git push origin "$BRANCH"
 echo ">> done. pushed to $REPO ($BRANCH)"
